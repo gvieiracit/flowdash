@@ -73,6 +73,14 @@ module.exports = (env) => {
           warnings: false,
         },
       },
+      proxy: {
+        '/flow-llm-proxy': {
+          target: 'https://flow.ciandt.com',
+          changeOrigin: true,
+          secure: true,
+          logLevel: 'debug',
+        },
+      },
     },
     plugins: production
       ? [

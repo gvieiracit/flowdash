@@ -10,8 +10,8 @@ import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import debounce from 'lodash/debounce';
 import { updateLastMessage } from '../state/QueryTranslatorActions';
 import { createNotification } from '../../../application/ApplicationActions';
-import { getLastMessage, QUERY_TRANSLATOR_EXTENSION_NAME } from '../state/QueryTranslatorSelector';
-import { GPT_LOADING_ICON } from './LoadingIcon';
+import { getLastMessage, getModelProvider, QUERY_TRANSLATOR_EXTENSION_NAME } from '../state/QueryTranslatorSelector';
+import { LoadingIcon } from '../../text2cypher/component/LoadingIcon';
 import {
   deleteSessionStoragePrepopulationReportFunction,
   setSessionStoragePrepopulationReportFunction,
@@ -34,6 +34,7 @@ export const NeoOverrideCardQueryEditor = ({
   displayError,
   setPrepopulationReportFunction,
   deletePrepopulationReportFunction,
+  modelProvider,
 }) => {
   enum Language {
     ENGLISH = 0,
@@ -112,7 +113,9 @@ export const NeoOverrideCardQueryEditor = ({
   return (
     <div>
       {runningTranslation ? (
-        <div style={{ height: 150, border: '1px dashed grey', position: 'relative' }}>{GPT_LOADING_ICON}</div>
+        <div style={{ height: 150, border: '1px dashed grey', position: 'relative' }}>
+          <LoadingIcon provider={modelProvider} />
+        </div>
       ) : (
         <>
           <table style={{ marginBottom: 5, width: '100%' }}>
@@ -196,6 +199,7 @@ export const NeoOverrideCardQueryEditor = ({
 const mapStateToProps = (state, ownProps) => ({
   lastMessage: getLastMessage(state, ownProps.pagenumber, ownProps.reportId),
   prepopulateExtensionName: getPrepopulateReportExtension(state, ownProps.reportId),
+  modelProvider: getModelProvider(state),
 });
 
 const mapDispatchToProps = (dispatch) => ({

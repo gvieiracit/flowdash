@@ -1,8 +1,8 @@
 import { SELECTION_TYPES } from '../../config/CardConfig';
 import { ModelClient } from './clients/ModelClient';
 import { OpenAiClient } from './clients/OpenAi/OpenAiClient';
-
 import { AzureOpenAiClient } from './clients/AzureOpenAi/AzureOpenAiClient';
+import { FlowClient } from './clients/Flow/FlowClient';
 
 interface ClientSettingEntry {
   label: string;
@@ -30,6 +30,7 @@ interface ClientConfig {
 interface AvailableClients {
   OpenAI: ClientConfig;
   vertexAi: ClientConfig;
+  'CI&T Flow': ClientConfig;
 }
 
 interface QueryTranslatorConfig {
@@ -76,6 +77,35 @@ export const QUERY_TRANSLATOR_CONFIG: QueryTranslatorConfig = {
           default: '',
           password: true,
           hasAuthButton: true,
+          authentication: true,
+        },
+        modelType: {
+          label: 'Model',
+          type: SELECTION_TYPES.LIST,
+          methodFromClient: 'getListModels',
+          default: '',
+          authentication: false,
+        },
+      },
+    },
+    'CI&T Flow': {
+      clientName: 'CI&T Flow',
+      clientClass: FlowClient,
+      settings: {
+        apiKey: {
+          label: 'Flow API Key',
+          type: SELECTION_TYPES.TEXT,
+          default:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6ImZlZjgxNzU3LTdlZGMtNDVlNC1iOGFkLWVkMDllMzY2YTFhYiIsImNsaWVudFNlY3JldCI6InJ6ZDhRfkJkV3JjRTBGWk9mUG9CZEdna2hpdkZTNXNFTXBzNWNhYnYiLCJ0ZW5hbnQiOiJhc29zIn0.oNilADstJlRUhukvDKOnpflyqX84MiUO9U2BzN2JYmk',
+          password: true,
+          hasAuthButton: true,
+          authentication: true,
+        },
+        provider: {
+          label: 'Provider',
+          type: SELECTION_TYPES.TEXT,
+          default: 'openai',
+          hasAuthButton: false,
           authentication: true,
         },
         modelType: {

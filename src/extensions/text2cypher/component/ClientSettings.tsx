@@ -47,7 +47,18 @@ export const ClientSettings = ({
 }) => {
   const defaultSettings = getQueryTranslatorDefaultConfig(modelProvider);
   const requiredSettings = Object.keys(defaultSettings).filter((setting) => defaultSettings[setting].required);
-  const [localSettings, setLocalSettings] = React.useState(settingState);
+
+  // Initialize localSettings with defaults merged in
+  const getInitialSettings = () => {
+    const merged = { ...settingState };
+    Object.keys(defaultSettings).forEach((key) => {
+      if (merged[key] === undefined || merged[key] === '') {
+        merged[key] = defaultSettings[key].default;
+      }
+    });
+    return merged;
+  };
+  const [localSettings, setLocalSettings] = React.useState(getInitialSettings);
   const [status, setStatus] = React.useState(
     settingState.modelType == undefined ? Status.NOT_AUTHENTICATED : Status.AUTHENTICATED
   );
@@ -120,6 +131,17 @@ export const ClientSettings = ({
     return 'red';
   };
 
+  // Merge settings with defaults to ensure default values are included
+  const getSettingsWithDefaults = () => {
+    const merged = { ...settingState };
+    Object.keys(defaultSettings).forEach((key) => {
+      if (merged[key] === undefined || merged[key] === '') {
+        merged[key] = defaultSettings[key].default;
+      }
+    });
+    return merged;
+  };
+
   // Prevent authentication if all required fields are not full (EX: look at checkIfDisabled)
   const authButton = (
     <IconButton
@@ -127,8 +149,10 @@ export const ClientSettings = ({
       aria-label='connect'
       onClick={(e) => {
         e.preventDefault();
+        const settingsWithDefaults = getSettingsWithDefaults();
         updateModelProvider(modelProvider);
-        updateClientSettings(settingState);
+        updateClientSettings(settingsWithDefaults);
+        setSettingsState(settingsWithDefaults);
         authenticate(setStatus);
       }}
       clean
