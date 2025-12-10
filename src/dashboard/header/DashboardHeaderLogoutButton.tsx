@@ -6,10 +6,14 @@ import { Tooltip } from '@mui/material';
 import { DASHBOARD_HEADER_BUTTON_COLOR } from '../../config/ApplicationConfig';
 import StyleConfig from '../../config/StyleConfig';
 import { ArrowRightOnRectangleIconOutline } from '@neo4j-ndl/react/icons';
+import { getDashboardTheme } from '../DashboardSelectors';
 
 await StyleConfig.getInstance();
 
-export const NeoLogoutButton = ({ standaloneSettings, onConnectionModalOpen }) => {
+const LogoutButton = ({ standaloneSettings, onConnectionModalOpen, themeMode }) => {
+  const isDarkMode = themeMode === 'dark';
+  const buttonColor = isDarkMode ? '#FFFFFF' : (DASHBOARD_HEADER_BUTTON_COLOR || '#000050');
+
   return standaloneSettings.standalone && !standaloneSettings.standaloneMultiDatabase ? (
     <></>
   ) : (
@@ -17,7 +21,7 @@ export const NeoLogoutButton = ({ standaloneSettings, onConnectionModalOpen }) =
       <IconButton
         className='logo-btn n-p-1'
         aria-label={'connection '}
-        style={DASHBOARD_HEADER_BUTTON_COLOR ? { color: DASHBOARD_HEADER_BUTTON_COLOR } : {}}
+        style={{ color: buttonColor }}
         onClick={() => {
           onConnectionModalOpen();
         }}
@@ -30,8 +34,12 @@ export const NeoLogoutButton = ({ standaloneSettings, onConnectionModalOpen }) =
   );
 };
 
-const mapStateToProps = () => ({});
+const mapStateToProps = (state) => ({
+  themeMode: getDashboardTheme(state),
+});
 
 const mapDispatchToProps = () => ({});
 
-export default connect(mapStateToProps, mapDispatchToProps)(NeoLogoutButton);
+export const NeoLogoutButton = connect(mapStateToProps, mapDispatchToProps)(LogoutButton);
+
+export default NeoLogoutButton;

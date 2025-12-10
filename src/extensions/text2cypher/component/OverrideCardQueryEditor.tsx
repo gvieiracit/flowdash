@@ -188,7 +188,7 @@ export const NeoOverrideCardQueryEditor = ({
                 <a
                   target='_blank'
                   style={{ textDecoration: 'underline' }}
-                  href='https://github.com/neo4j-labs/neodash/tree/master/docs/modules/ROOT/pages/user-guide/extensions/natural-language-queries.adoc'
+                  href='https://github.com/gvieiracit/flowdash/tree/master/docs/modules/ROOT/pages/user-guide/extensions/natural-language-queries.adoc'
                 >
                   documentation
                 </a>

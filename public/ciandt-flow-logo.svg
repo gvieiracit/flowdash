@@ -1,0 +1,26 @@
+<svg width="160" height="32" viewBox="0 0 160 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .brand-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 18px; fill: #000050; }
+    .brand-icon { fill: #000050; }
+    @media (prefers-color-scheme: dark) {
+      .brand-text { fill: #FFFFFF; }
+      .brand-icon { fill: #FFFFFF; }
+    }
+    .ndl-theme-dark .brand-text { fill: #FFFFFF; }
+    .ndl-theme-dark .brand-icon { fill: #FFFFFF; }
+  </style>
+  
+  <!-- CI&T Text -->
+  <text x="0" y="21" class="brand-text">CI&amp;T</text>
+  
+  <!-- Flow Icon - adjusted vertical position -->
+  <g transform="translate(48, 6) scale(0.56)" class="brand-icon">
+    <!-- Right part of icon -->
+    <path d="M38.67 0.0014801V12.9391C38.67 20.069 32.916 25.8529 25.809 25.8767V12.9391C25.809 5.79427 20.031 0.0014801 12.904 0.0014801H38.67Z"/>
+    <!-- Left part of icon -->
+    <path d="M25.765 25.8767H0V12.9391C0 5.80912 5.754 0.0252363 12.861 0.00146484V12.9391C12.861 20.0839 18.639 25.8767 25.765 25.8767Z"/>
+  </g>
+  
+  <!-- FLOW Text - adjusted position -->
+  <text x="74" y="21" class="brand-text">FLOW</text>
+</svg>

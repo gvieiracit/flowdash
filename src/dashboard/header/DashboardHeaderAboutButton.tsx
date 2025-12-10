@@ -10,7 +10,7 @@ import { Tooltip } from '@mui/material';
 
 import { DASHBOARD_HEADER_BUTTON_COLOR } from '../../config/ApplicationConfig';
 import StyleConfig from '../../config/StyleConfig';
-import { getDashboardExtensions } from '../DashboardSelectors';
+import { getDashboardExtensions, getDashboardTheme } from '../DashboardSelectors';
 import { getExampleReports } from '../../extensions/ExtensionUtils';
 import { NeoReportExamplesModal } from '../../modal/ReportExamplesModal';
 import { enterHandler, openTab } from '../../utils/accessibility';
@@ -19,7 +19,7 @@ type HelpMenuOpenEvent = React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTM
 
 await StyleConfig.getInstance();
 
-export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => {
+const AboutButton = ({ connection, onAboutModalOpen, extensions, themeMode }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handleHelpMenuOpen = (event: HelpMenuOpenEvent) => {
     setAnchorEl(event.currentTarget);
@@ -34,13 +34,16 @@ export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => 
     handleHelpMenuClose();
   };
 
+  const isDarkMode = themeMode === 'dark';
+  const buttonColor = isDarkMode ? '#FFFFFF' : (DASHBOARD_HEADER_BUTTON_COLOR || '#000050');
+
   return (
     <>
       <Tooltip title={'Help and documentation'} disableInteractive>
         <IconButton
           className='logo-btn n-p-1'
           aria-label={'help'}
-          style={DASHBOARD_HEADER_BUTTON_COLOR ? { color: DASHBOARD_HEADER_BUTTON_COLOR } : {}}
+          style={{ color: buttonColor }}
           size='large'
           onClick={handleHelpMenuOpen}
           clean
@@ -72,12 +75,12 @@ export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => 
             onKeyDown={(e) =>
               enterHandler(e, () =>
                 openTab(
-                  'https://github.com/neo4j-labs/neodash/tree/master/docs/modules/ROOT/pages/user-guide/index.adoc'
+                  'https://github.com/gvieiracit/flowdash/tree/master/docs/modules/ROOT/pages/user-guide/index.adoc'
                 )
               )
             }
             onClick={() =>
-              openTab('https://github.com/neo4j-labs/neodash/tree/master/docs/modules/ROOT/pages/user-guide/index.adoc')
+              openTab('https://github.com/gvieiracit/flowdash/tree/master/docs/modules/ROOT/pages/user-guide/index.adoc')
             }
             title={'Documentation'}
             icon={<BookOpenIconOutline />}
@@ -96,6 +99,9 @@ export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => 
 
 const mapStateToProps = (state) => ({
   extensions: getDashboardExtensions(state),
+  themeMode: getDashboardTheme(state),
 });
 
-export default connect(mapStateToProps, null)(NeoAboutButton);
+export const NeoAboutButton = connect(mapStateToProps, null)(AboutButton);
+
+export default NeoAboutButton;

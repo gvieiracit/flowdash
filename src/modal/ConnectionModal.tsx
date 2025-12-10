@@ -123,8 +123,8 @@ export default function NeoConnectionModal({
 
           {window.location.href.startsWith('https') && !(protocol.endsWith('+s') || protocol.endsWith('+scc')) ? (
             <div>
-              You're running NeoDash from a secure (https) webpage. You can't connect to a Neo4j database with an
-              unencrypted protocol. Change the protocol, or use NeoDash using http instead: &nbsp;
+              You're running FlowDash from a secure (https) webpage. You can't connect to a Neo4j database with an
+              unencrypted protocol. Change the protocol, or use FlowDash using http instead: &nbsp;
               <TextLink href={window.location.href.replace('https://', 'http://')}>
                 {window.location.href.replace('https://', 'http://')}
               </TextLink>
@@ -240,40 +240,6 @@ export default function NeoConnectionModal({
             )}
           </form>
         </Dialog.Content>
-        <Dialog.Actions
-          style={{
-            background: '#555',
-            marginLeft: '-3rem',
-            marginRight: '-3rem',
-            marginBottom: '-3rem',
-            padding: '3rem',
-          }}
-        >
-          {standalone ? (
-            <div style={{ color: 'lightgrey' }}>
-              {standaloneSettings.standaloneDashboardURL === '' ? (
-                <>
-                  Sign in to continue. You will be connected to Neo4j, and load a dashboard called&nbsp;
-                  <b>{standaloneSettings.standaloneDashboardName}</b>.
-                </>
-              ) : (
-                <> Sign in to continue. You will be connected to Neo4j, and load a dashboard.</>
-              )}
-            </div>
-          ) : (
-            <div style={{ color: 'white' }}>
-              Enter your Neo4j database credentials to start. Don't have a Neo4j database yet? Create your own in&nbsp;
-              <TextLink externalLink className='n-text-neutral-text-inverse' href='https://neo4j.com/download/'>
-                Neo4j Desktop
-              </TextLink>
-              , or try the&nbsp;
-              <TextLink externalLink className='n-text-neutral-text-inverse' href='https://console.neo4j.io/'>
-                Neo4j Aura
-              </TextLink>
-              &nbsp;free tier.
-            </div>
-          )}
-        </Dialog.Actions>
       </Dialog>
     </>
   );

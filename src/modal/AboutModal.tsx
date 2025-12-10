@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button, Dialog, TextLink } from '@neo4j-ndl/react';
-import { BookOpenIconOutline, BeakerIconOutline } from '@neo4j-ndl/react/icons';
+import { BeakerIconOutline } from '@neo4j-ndl/react/icons';
 import { Section, SectionTitle, SectionContent } from './ModalUtils';
 
-export const version = '2.4.11-labs';
+export const version = '2.4.11-flow';
 
 export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
   const downloadDebugFile = () => {
@@ -12,7 +12,7 @@ export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
     state.version = version;
     const file = new Blob([JSON.stringify(state, null, 2)], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = 'neodash-debug-state.json';
+    element.download = 'flowdash-debug-state.json';
     document.body.appendChild(element); // Required for this to work in FireFox
     element.click();
   };
@@ -20,13 +20,18 @@ export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
   return (
     <>
       <Dialog onClose={handleClose} open={open} aria-labelledby='form-dialog-title' size='large'>
-        <Dialog.Header>About NeoDash</Dialog.Header>
+        <Dialog.Header>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src='ciandt-flow-icon.svg' alt='CI&T Flow' style={{ height: '24px', width: 'auto' }} />
+            <span>About FlowDash</span>
+          </div>
+        </Dialog.Header>
         <Dialog.Content>
           <div className='n-flex n-flex-col n-gap-token-4 n-divide-y n-divide-neutral-border-strong'>
             <Section>
               <SectionContent>
-                NeoDash is a dashboard builder for the Neo4j graph database. With NeoDash, all you need to do is write
-                Cypher queries, and you can build a dashboard in minutes.
+                <strong>FlowDash</strong> is a dashboard builder powered by CI&T Flow. Build powerful dashboards
+                for your graph data with simple Cypher queries in minutes.
               </SectionContent>
             </Section>
             <Section>
@@ -44,7 +49,7 @@ export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
                     Use results of your Cypher queries to create tables, bar charts, graph visualizations, and more.
                   </li>
                   <li>Style your reports, group them together in pages, and add interactivity between reports.</li>
-                  <li>Save and share your dashboards with your friends.</li>
+                  <li>Save and share your dashboards with your team.</li>
                 </ul>
                 No connectors or data pre-processing needed, it works directly with Neo4j!
               </SectionContent>
@@ -52,54 +57,20 @@ export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
             <Section>
               <SectionTitle>Getting Started</SectionTitle>
               <SectionContent>
-                You will automatically start with an empty dashboard when starting up NeoDash for this first time.
+                You will automatically start with an empty dashboard when starting up FlowDash for the first time.
                 <br />
-                Click the{' '}
-                <strong>
-                  (<BookOpenIconOutline className='icon-base icon-inline text-r' /> Documentation)
-                </strong>
-                &nbsp;button to see some example queries and visualizations.
+                Connect to your Neo4j database and start building visualizations right away.
               </SectionContent>
             </Section>
             <Section>
-              <SectionTitle>Extending NeoDash</SectionTitle>
+              <SectionTitle>Powered by CI&T Flow</SectionTitle>
               <SectionContent>
-                NeoDash is built with React and&nbsp;
-                <TextLink target='_blank' href='https://github.com/adam-cowley/use-neo4j'>
-                  use-neo4j
+                FlowDash is built on top of the NeoDash open-source project and customized for CI&T Flow.
+                Visit&nbsp;
+                <TextLink target='_blank' href='https://flow.ciandt.com/'>
+                  flow.ciandt.com
                 </TextLink>
-                , It uses{' '}
-                <TextLink target='_blank' href='https://github.com/neo4j-labs/charts'>
-                  charts
-                </TextLink>{' '}
-                to power some of the visualizations, and&nbsp;
-                <TextLink target='_blank' href='https://www.openstreetmap.org/'>
-                  openstreetmap
-                </TextLink>{' '}
-                for the map view. You can also extend NeoDash with your own visualizations. Check out the developer
-                guide in the{' '}
-                <TextLink target='_blank' href='https://github.com/neo4j-labs/neodash/'>
-                  project repository
-                </TextLink>
-                .
-              </SectionContent>
-            </Section>
-            <Section>
-              <SectionTitle>Contact</SectionTitle>
-              <SectionContent>
-                For suggestions, feature requests and other feedback: create an issue on the&nbsp;
-                <TextLink target='_blank' href='https://github.com/neo4j-labs/neodash'>
-                  GitHub repository
-                </TextLink>{' '}
-                , or the{' '}
-                <TextLink
-                  href={
-                    'https://community.neo4j.com/t5/forums/filteredbylabelpage/board-id/integrations/label-name/neodash'
-                  }
-                >
-                  Neo4j Community Forums
-                </TextLink>
-                .
+                &nbsp;to learn more about CI&T Flow's AI productivity platform.
               </SectionContent>
             </Section>
           </div>
@@ -111,7 +82,7 @@ export const NeoAboutModal = ({ open, handleClose, getDebugState }) => {
               </Button>
             </div>
             <div>
-              <i style={{ float: 'right', fontSize: '11px' }}>v{version}</i>
+              <i style={{ float: 'right', fontSize: '11px', color: '#6B7280' }}>v{version}</i>
             </div>
           </div>
         </Dialog.Content>

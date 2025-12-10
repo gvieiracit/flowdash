@@ -1,22 +1,24 @@
 {
-    "short_name": "NeoDash",
-    "name": "NeoDash",
-    "homepage": "https://github.com/neo4j-labs/neodash/",
+    "short_name": "CI&T Flow",
+    "name": "CI&T Flow Dashboard",
+    "description": "Build powerful dashboards for your graph data",
     "neo4jDesktop": {
         "apiVersion": "^1.2.0"
     },
     "icons": [
         {
-            "src": "favicon.ico",
-            "type": "ico"
+            "src": "favicon.svg",
+            "type": "image/svg+xml",
+            "sizes": "any"
         },
         {
-            "src": "favicon.png",
-            "type": "png"
+            "src": "ciandt-flow-icon.svg",
+            "type": "image/svg+xml",
+            "sizes": "192x192"
         }
     ],
     "start_url": "./index.html",
     "display": "standalone",
-    "theme_color": "#000000",
-    "background_color": "#ffffff"
+    "theme_color": "#000050",
+    "background_color": "#F5F7FA"
 }

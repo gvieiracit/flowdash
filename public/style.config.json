@@ -1,1 +1,14 @@
-{}
+{
+  "style": {
+    "DASHBOARD_HEADER_COLOR": "#000050",
+    "DASHBOARD_HEADER_BUTTON_COLOR": "#FFFFFF",
+    "DASHBOARD_HEADER_TITLE_COLOR": "#FFFFFF",
+    "DASHBOARD_HEADER_BRAND_LOGO": "ciandt-flow-logo.svg",
+    "--ciandt-primary": "#000050",
+    "--ciandt-accent": "#E94E47",
+    "--ciandt-cyan": "#00B8D4",
+    "--ciandt-background": "#F5F7FA",
+    "--ciandt-card": "#FFFFFF",
+    "--ciandt-text-secondary": "#6B7280"
+  }
+}

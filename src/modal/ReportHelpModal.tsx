@@ -15,7 +15,7 @@ export const NeoReportHelpModal = ({ open, handleClose }) => {
         the{' '}
         <TextLink
           externalLink
-          href='https://github.com/neo4j-labs/neodash/tree/master/docs/modules/ROOT/pages/user-guide/reports/index.adoc'
+          href='https://github.com/gvieiracit/flowdash/tree/master/docs/modules/ROOT/pages/user-guide/reports/index.adoc'
           target='_blank'
         >
           Documentation

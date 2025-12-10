@@ -1,4 +1,37 @@
-/* Needle */
+/* CI&T Flow Dashboard Styles */
+
+/* CSS Variables - CI&T Brand Colors */
+:root {
+  --ciandt-primary: #000050;
+  --ciandt-accent: #E94E47;
+  --ciandt-cyan: #00B8D4;
+  --ciandt-background: #F5F7FA;
+  --ciandt-card: #FFFFFF;
+  --ciandt-text-primary: #000050;
+  --ciandt-text-secondary: #6B7280;
+  --ciandt-border: #E5E7EB;
+  --ciandt-success: #10B981;
+  --ciandt-warning: #F59E0B;
+  --ciandt-error: #EF4444;
+  
+  /* Shadows */
+  --ciandt-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ciandt-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --ciandt-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --ciandt-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
+  --ciandt-radius-sm: 6px;
+  --ciandt-radius: 12px;
+  --ciandt-radius-lg: 16px;
+}
+
+/* Global Font */
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Needle Overrides */
 .logo-btn.large .ndl-icon {
   width: 36px !important;
   height: 36px !important;
@@ -17,7 +50,7 @@
 }
 
 .MuiInputBase-root {
-  font-family: 'Nunito Sans', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
 }
 /* End Needle */
 
@@ -127,8 +160,8 @@ div:has(> .table-small-header) {
 }
 
 .MuiCard-root {
-  box-shadow: 0 0 #0000, 0 0 #0000, var(--tw-shadow) !important;
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+  box-shadow: var(--ciandt-shadow) !important;
+  border-radius: var(--ciandt-radius) !important;
 }
 
 .white-text {
@@ -149,7 +182,7 @@ div:has(> .table-small-header) {
   background-size: 20;
   background-attachment: local;
   background-repeat: no-repeat;
-  font-family: monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   line-height: 16px;
   border-color: #fff;
@@ -215,17 +248,17 @@ div:has(> .table-small-header) {
 @keyframes pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 0 0 rgba(0, 0, 80, 0.7);
   }
 
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+    box-shadow: 0 0 0 10px rgba(0, 0, 80, 0);
   }
 
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    box-shadow: 0 0 0 0 rgba(0, 0, 80, 0);
   }
 }
 
@@ -248,4 +281,75 @@ div:has(> .table-small-header) {
 
 .markdown-widget a {
   text-decoration: underline;
+  color: var(--ciandt-primary);
+}
+
+.markdown-widget a:hover {
+  color: var(--ciandt-cyan);
+}
+
+/* CI&T Flow Custom Styles */
+.ciandt-card {
+  background: var(--ciandt-card);
+  border-radius: var(--ciandt-radius);
+  box-shadow: var(--ciandt-shadow);
+  border: 1px solid var(--ciandt-border);
+}
+
+.ciandt-btn-primary {
+  background-color: var(--ciandt-primary) !important;
+  color: white !important;
+  border-radius: var(--ciandt-radius-sm) !important;
+}
+
+.ciandt-btn-primary:hover {
+  background-color: #000070 !important;
+}
+
+.ciandt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ciandt-badge-cyan {
+  background-color: rgba(0, 184, 212, 0.1);
+  color: var(--ciandt-cyan);
+}
+
+.ciandt-badge-coral {
+  background-color: rgba(233, 78, 71, 0.1);
+  color: var(--ciandt-accent);
+}
+
+/* Header Styles */
+.ciandt-header {
+  background-color: var(--ciandt-card);
+  border-bottom: 1px solid var(--ciandt-border);
+}
+
+/* Dialog/Modal Styles */
+.ndl-dialog {
+  border-radius: var(--ciandt-radius-lg) !important;
+}
+
+/* Navigation Tab Styles */
+.ciandt-nav-tab {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ciandt-nav-tab:hover {
+  background-color: var(--ciandt-background);
+}
+
+.ciandt-nav-tab.active {
+  background-color: var(--ciandt-background);
+  color: var(--ciandt-primary);
 }

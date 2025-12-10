@@ -2,8 +2,6 @@ import React from 'react';
 import { Tooltip } from '@mui/material';
 import { Button, Dialog, TextLink } from '@neo4j-ndl/react';
 import {
-  BoltIconSolid,
-  ExclamationTriangleIconSolid,
   BackspaceIconOutline,
   PlayIconSolid,
 } from '@neo4j-ndl/react/icons';
@@ -15,8 +13,6 @@ export const NeoWelcomeScreenModal = ({
   welcomeScreenOpen,
   setWelcomeScreenOpen,
   hasCachedDashboard,
-  hasNeo4jDesktopConnection,
-  createConnectionFromDesktopIntegration,
   resetDashboard,
   onConnectionModalOpen,
   onAboutModalOpen,
@@ -39,8 +35,10 @@ export const NeoWelcomeScreenModal = ({
     <div>
       <Dialog size='small' open={welcomeScreenOpen} aria-labelledby='form-dialog-title' disableCloseButton>
         <Dialog.Header id='form-dialog-title'>
-          NeoDash - Neo4j Dashboard Builder
-          <BoltIconSolid className='icon-base' color='gold' style={{ float: 'right' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src='ciandt-flow-icon.svg' alt='CI&T Flow' style={{ height: '20px', width: 'auto', marginTop: '2px' }} />
+            <span>CI&T Flow Dashboard</span>
+          </div>
         </Dialog.Header>
         <Dialog.Content>
           <Tooltip title='Connect to Neo4j and create a new dashboard.' aria-label='create' disableInteractive>
@@ -54,8 +52,13 @@ export const NeoWelcomeScreenModal = ({
                   handleClose();
                 }
               }}
-              style={{ marginTop: '10px', width: '100%' }}
-              fill='outlined'
+              style={{ 
+                marginTop: '10px', 
+                width: '100%',
+                backgroundColor: '#000050',
+                borderColor: '#000050'
+              }}
+              fill='filled'
               color='primary'
               size='large'
             >
@@ -89,46 +92,6 @@ export const NeoWelcomeScreenModal = ({
               </Button>
             )}
           </Tooltip>
-          {hasNeo4jDesktopConnection ? (
-            <Tooltip title='Connect to an active database in Neo4j Desktop.' aria-label='connect' disableInteractive>
-              <Button
-                onClick={() => {
-                  handleClose();
-                  createConnectionFromDesktopIntegration();
-                }}
-                style={{ marginTop: '10px', width: '100%' }}
-                fill='outlined'
-                color='neutral'
-                size='large'
-              >
-                Connect to Neo4j Desktop
-              </Button>
-            </Tooltip>
-          ) : (
-            <Button
-              disabled
-              onClick={handleClose}
-              style={{ marginTop: '10px', width: '100%' }}
-              fill='outlined'
-              color='neutral'
-              size='large'
-            >
-              Connect to Neo4j Desktop
-            </Button>
-          )}
-
-          <Tooltip title='View a gallery of live examples.' aria-label='demo' disableInteractive>
-            <Button
-              target='_blank'
-              href='https://neodash-gallery.graphapp.io'
-              style={{ marginTop: '10px', width: '100%' }}
-              fill='outlined'
-              color='neutral'
-              size='large'
-            >
-              Try a Demo
-            </Button>
-          </Tooltip>
 
           <Tooltip title='Show information about this application.' aria-label='' disableInteractive>
             <Button
@@ -138,31 +101,22 @@ export const NeoWelcomeScreenModal = ({
               color='neutral'
               size='large'
             >
-              {/**/}
               About
             </Button>
           </Tooltip>
         </Dialog.Content>
         <Dialog.Actions
           style={{
-            background: '#555',
+            background: '#000050',
             marginLeft: '-3rem',
             marginRight: '-3rem',
             marginBottom: '-3rem',
-            padding: '3rem',
+            padding: '2rem 3rem',
+            justifyContent: 'center',
           }}
         >
-          <div style={{ color: 'white' }}>
-            This version of NeoDash is not actively maintained. Visit the&nbsp;
-            <TextLink
-              href='https://github.com/neo4j-labs/neodash'
-              className='n-text-neutral-text-inverse'
-              target='_blank'
-              style={{ color: 'white' }}
-            >
-              repository
-            </TextLink>
-            &nbsp; to learn more.
+          <div style={{ color: 'white', fontSize: '14px', textAlign: 'center', width: '100%' }}>
+            Powered by CI&T Flow — Build powerful dashboards for your graph data.
           </div>
         </Dialog.Actions>
       </Dialog>
@@ -171,7 +125,6 @@ export const NeoWelcomeScreenModal = ({
       <Dialog size='small' open={promptOpen == true} aria-labelledby='form-dialog-title'>
         <Dialog.Header id='form-dialog-title'>
           Create New Dashboard
-          {/* <ExclamationTriangleIconSolid className='icon-base' color='orange' style={{ float: 'right' }} /> */}
         </Dialog.Header>
         <Dialog.Content>
           Are you sure you want to create a new dashboard? This will remove your currently cached dashboard.
@@ -196,7 +149,12 @@ export const NeoWelcomeScreenModal = ({
               resetDashboard();
               onConnectionModalOpen();
             }}
-            style={{ marginTop: '10px', float: 'right', marginRight: '5px' }}
+            style={{ 
+              marginTop: '10px', 
+              float: 'right', 
+              marginRight: '5px',
+              backgroundColor: '#000050'
+            }}
             color='primary'
           >
             Yes

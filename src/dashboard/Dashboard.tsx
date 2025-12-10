@@ -32,7 +32,7 @@ const Dashboard = ({
       connection.port,
       connection.username,
       connection.password,
-      { userAgent: `neodash/v${version}` }
+      { userAgent: `flowdash/v${version}` }
     );
     setDriver(newDriver);
   }
@@ -83,7 +83,7 @@ const Dashboard = ({
                     {standaloneSettings.standalonePassword &&
                     standaloneSettings.standalonePasswordWarningHidden !== true ? (
                       <div style={{ textAlign: 'center', color: 'red', paddingTop: 60, marginBottom: -50 }}>
-                        Warning: NeoDash is running with a plaintext password in config.json.
+                        Warning: FlowDash is running with a plaintext password in config.json.
                       </div>
                     ) : (
                       <></>

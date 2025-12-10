@@ -10,7 +10,7 @@ export const NeoUpgradeOldDashboardModal = ({ open, text, clearOldDashboard, loa
       <Dialog size='large' open={open} aria-labelledby='form-dialog-title'>
         <Dialog.Header id='form-dialog-title'>Old Dashboard Found</Dialog.Header>
         <Dialog.Content>
-          We've found a dashboard built with an old version of NeoDash. Would you like to attempt an upgrade, or start
+          We've found a dashboard built with an older version. Would you like to attempt an upgrade, or start
           from scratch?
           <br />
           <b>Make sure you back up this dashboard first!</b>

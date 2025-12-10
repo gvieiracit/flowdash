@@ -1,0 +1,9 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- CI&T Flow Favicon - official shape -->
+  <g transform="translate(2, 3) scale(0.72)">
+    <!-- Right part of icon -->
+    <path d="M38.67 0.0014801V12.9391C38.67 20.069 32.916 25.8529 25.809 25.8767V12.9391C25.809 5.79427 20.031 0.0014801 12.904 0.0014801H38.67Z" fill="#000050"/>
+    <!-- Left part of icon -->
+    <path d="M25.765 25.8767H0V12.9391C0 5.80912 5.754 0.0252363 12.861 0.00146484V12.9391C12.861 20.0839 18.639 25.8767 25.765 25.8767Z" fill="#000050"/>
+  </g>
+</svg>

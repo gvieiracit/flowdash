@@ -15,6 +15,20 @@ import {
 } from 'd3-scale-chromatic';
 
 export const categoricalColorSchemes = {
+  ciandt: [
+    '#000050', // Primary Navy
+    '#E94E47', // Accent Coral
+    '#00B8D4', // Accent Cyan
+    '#6B7280', // Text Gray
+    '#10B981', // Success Green
+    '#F59E0B', // Warning Amber
+    '#8B5CF6', // Purple
+    '#EC4899', // Pink
+    '#14B8A6', // Teal
+    '#F97316', // Orange
+    '#3B82F6', // Blue
+    '#84CC16', // Lime
+  ],
   neodash: [
     '#588c7e',
     '#f2e394',

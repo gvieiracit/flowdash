@@ -1,0 +1,16 @@
+<svg width="200" height="32" viewBox="0 0 200 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- CI&T FLOW Full Logo with CI&T text -->
+  
+  <!-- CI&T Text -->
+  <text x="0" y="22" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#000050">CI&amp;T</text>
+  
+  <!-- Icon - Navy shape with coral accent -->
+  <g transform="translate(56, 0)">
+    <path d="M4 8C4 5.79086 5.79086 4 8 4H20C22.2091 4 24 5.79086 24 8V24C24 26.2091 22.2091 28 20 28H8C5.79086 28 4 26.2091 4 24V8Z" fill="#000050"/>
+    <path d="M24 16C24 22.6274 19.0751 28 13 28C18.5228 28 24 22.6274 24 16C24 9.37258 18.5228 4 13 4C19.0751 4 24 9.37258 24 16Z" fill="#E94E47"/>
+  </g>
+  
+  <!-- FLOW Text -->
+  <text x="92" y="22" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#000050">FLOW</text>
+</svg>
+

@@ -5,7 +5,6 @@ import {
   applicationGetConnection,
   applicationGetShareDetails,
   applicationGetOldDashboard,
-  applicationHasNeo4jDesktopConnection,
   applicationHasAboutModalOpen,
   applicationHasCachedDashboard,
   applicationHasConnectionModalOpen,
@@ -20,7 +19,6 @@ import {
 } from '../application/ApplicationSelectors';
 import {
   createConnectionThunk,
-  createConnectionFromDesktopIntegrationThunk,
   onConfirmLoadSharedDashboardThunk,
   loadApplicationConfigThunk,
 } from '../application/ApplicationThunks';
@@ -77,11 +75,9 @@ const Application = ({
   standaloneSettings,
   aboutModalOpen,
   loadDashboard,
-  hasNeo4jDesktopConnection,
   deprecated,
   shareDetails,
   createConnection,
-  createConnectionFromDesktopIntegration,
   setConnectionDetails,
   onResetShareDetails,
   onConfirmLoadSharedDashboard,
@@ -128,35 +124,7 @@ const Application = ({
       ref={ref}
       className={`n-bg-palette-neutral-bg-default n-h-screen n-w-screen n-flex n-flex-col n-overflow-hidden`}
     >
-      {deprecated && bannerOpen && connected ? (
-        <Banner
-          title='Deprecation notice'
-          type='warning'
-          closeable={true}
-          icon={true}
-          onClose={() => setBannerOpen(false)}
-        >
-          This app will no longer be available in the near future. &nbsp;
-          <u>
-            <b>
-              <a target='_blank' href='https://console-preview.neo4j.io/tools/dashboards'>
-                Migrate
-              </a>
-            </b>
-          </u>
-          &nbsp;your dashboards to the Neo4j Console, or{' '}
-          <u>
-            <b>
-              <a target='_blank' href='https://github.com/neo4j-labs/neodash'>
-                visit
-              </a>
-            </b>
-          </u>{' '}
-          the NeoDash repository to run NeoDash yourself.
-        </Banner>
-      ) : (
-        <></>
-      )}
+      {/* FlowDash - deprecation banner removed */}
       {connected ? (
         <Suspense fallback=''>
           <Dashboard
@@ -166,7 +134,7 @@ const Application = ({
           ></Dashboard>
         </Suspense>
       ) : (
-        <NeoDashboardPlaceholder></NeoDashboardPlaceholder>
+        <NeoDashboardPlaceholder onAboutModalOpen={onAboutModalOpen}></NeoDashboardPlaceholder>
       )}
       {/* TODO - move all models into a pop-ups (or modals) component. */}
       <Suspense fallback=''>
@@ -190,9 +158,7 @@ const Application = ({
         welcomeScreenOpen={welcomeScreenOpen}
         setWelcomeScreenOpen={setWelcomeScreenOpen}
         hasCachedDashboard={hasCachedDashboard}
-        hasNeo4jDesktopConnection={hasNeo4jDesktopConnection}
         onConnectionModalOpen={onConnectionModalOpen}
-        createConnectionFromDesktopIntegration={createConnectionFromDesktopIntegration}
         onAboutModalOpen={onAboutModalOpen}
         resetDashboard={resetDashboard}
       ></NeoWelcomeScreenModal>
@@ -238,7 +204,6 @@ const mapStateToProps = (state) => ({
   getDebugState: () => {
     return applicationGetDebugState(state);
   }, // TODO - change this to be variable instead of a function?
-  hasNeo4jDesktopConnection: applicationHasNeo4jDesktopConnection(state),
   themeMode: getDashboardTheme(state),
 });
 
@@ -247,10 +212,6 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(setConnected(false));
     dispatch(resetSessionStorage());
     dispatch(createConnectionThunk(protocol, url, port, database, username, password));
-  },
-  createConnectionFromDesktopIntegration: () => {
-    dispatch(setConnected(false));
-    dispatch(createConnectionFromDesktopIntegrationThunk());
   },
   loadDashboard: (uuid, text) => {
     dispatch(clearNotification());
