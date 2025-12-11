@@ -1,7 +1,7 @@
 {
   "name": "flowdash",
   "version": "2.4.11",
-  "description": "FlowDash - CI&T Flow Dashboard Builder",
+  "description": "FlowDash - CI&T Flow Graph Dashboards Builder",
   "neo4jDesktop": {
     "apiVersion": "^1.2.0"
   },

@@ -1,6 +1,6 @@
 {
     "short_name": "CI&T Flow",
-    "name": "CI&T Flow Dashboard",
+    "name": "CI&T Flow Graph Dashboards",
     "description": "Build powerful dashboards for your graph data",
     "neo4jDesktop": {
         "apiVersion": "^1.2.0"

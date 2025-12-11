@@ -17,7 +17,7 @@ const DashboardHeaderLogo = ({ resetApplication, themeMode }) => {
           onClick={resetApplication} 
           className='n-h-8 n-w-auto n-m-2' 
           src={DASHBOARD_HEADER_BRAND_LOGO} 
-          alt='CI&T Flow Dashboard'
+          alt='CI&T Flow Graph Dashboards'
           style={isDarkMode ? { filter: 'brightness(0) invert(1)' } : {}}
         />
       </a>

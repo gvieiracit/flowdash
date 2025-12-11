@@ -63,7 +63,7 @@ export const NeoDashboardTitle = ({
   }
 
   useEffect(() => {
-    document.title = dashboardTitle ? `CI&T Flow - ${dashboardTitle}` : 'CI&T Flow Dashboard';
+    document.title = dashboardTitle ? `CI&T Flow - ${dashboardTitle}` : 'CI&T Flow Graph Dashboards';
     // Reset text to the dashboard state when the page gets reorganized.
     if (dashboardTitle !== dashboardTitleText) {
       setDashboardTitleText(dashboardTitle);

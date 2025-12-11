@@ -37,7 +37,7 @@ export const NeoWelcomeScreenModal = ({
         <Dialog.Header id='form-dialog-title'>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src='ciandt-flow-icon.svg' alt='CI&T Flow' style={{ height: '20px', width: 'auto', marginTop: '2px' }} />
-            <span>CI&T Flow Dashboard</span>
+            <span>CI&T Flow Graph Dashboards</span>
           </div>
         </Dialog.Header>
         <Dialog.Content>
