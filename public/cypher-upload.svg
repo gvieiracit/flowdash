@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">
+  <!-- Background -->
+  <rect width="300" height="200" fill="#f5f5f5" rx="8"/>
+  
+  <!-- Terminal window frame -->
+  <rect x="30" y="30" width="240" height="140" fill="#1a1a2e" rx="8"/>
+  
+  <!-- Terminal header -->
+  <rect x="30" y="30" width="240" height="25" fill="#2d2d44" rx="8 8 0 0"/>
+  
+  <!-- Terminal buttons -->
+  <circle cx="48" cy="42" r="5" fill="#ff5f56"/>
+  <circle cx="65" cy="42" r="5" fill="#ffbd2e"/>
+  <circle cx="82" cy="42" r="5" fill="#27c93f"/>
+  
+  <!-- Cypher code lines -->
+  <text x="45" y="75" font-family="monospace" font-size="10" fill="#00d4aa">MATCH</text>
+  <text x="82" y="75" font-family="monospace" font-size="10" fill="#ffffff">(n:Node)</text>
+  
+  <text x="45" y="95" font-family="monospace" font-size="10" fill="#00d4aa">WHERE</text>
+  <text x="82" y="95" font-family="monospace" font-size="10" fill="#ffffff">n.prop = $value</text>
+  
+  <text x="45" y="115" font-family="monospace" font-size="10" fill="#00d4aa">RETURN</text>
+  <text x="92" y="115" font-family="monospace" font-size="10" fill="#ffffff">n</text>
+  
+  <!-- Cursor blink -->
+  <rect x="45" y="130" width="8" height="12" fill="#018bff">
+    <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  
+  <!-- Upload arrow icon -->
+  <g transform="translate(220, 100)">
+    <circle cx="25" cy="25" r="25" fill="#018bff"/>
+    <path d="M25 15 L25 35 M17 23 L25 15 L33 23" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

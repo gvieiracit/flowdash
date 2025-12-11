@@ -6,6 +6,7 @@ import { translateQuery } from './text2cypher/util/Util';
 import { GPT_LOADING_ICON } from './text2cypher/component/LoadingIcon';
 import QueryTranslatorButton from './text2cypher/component/QueryTranslatorButton';
 import RBACManagementLabelButton from './rbac/RBACManagementLabelButton';
+import CypherUploadButton from './cypher-upload/CypherUploadButton';
 
 // TODO: continue documenting interface
 interface Extension {
@@ -93,6 +94,17 @@ export const EXTENSIONS: Record<string, Extension> = {
       'This extension lets you manage access control, letting you assign users to roles, as well as controlling which node labels can be read by a user.',
     link: 'https://neo4j.com/professional-services/',
     settingsMenuButton: RBACManagementLabelButton,
+  },
+  'cypher-upload': {
+    name: 'cypher-upload',
+    label: 'Cypher Upload',
+    author: 'CI&T',
+    image: 'cypher-upload.svg',
+    enabled: true,
+    description:
+      'Upload and execute .cypher files directly against your connected Neo4j database. This extension allows you to run bulk Cypher commands from files without having to copy and paste them.',
+    link: 'https://github.com/gvieiracit/flowdash',
+    settingsMenuButton: CypherUploadButton,
   },
 };
 
