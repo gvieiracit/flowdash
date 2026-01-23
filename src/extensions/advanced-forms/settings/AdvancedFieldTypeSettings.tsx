@@ -85,6 +85,9 @@ const OptionsEditor: React.FC<{
 };
 
 const AdvancedFieldTypeSettings: React.FC<AdvancedFieldTypeSettingsProps> = ({ fieldType, fieldConfig, onUpdate }) => {
+  // Generate the parameter name with neodash_ prefix
+  const parameterName = fieldConfig.name ? `neodash_${fieldConfig.name}` : '';
+
   // Common fields for all types
   const renderCommonFields = () => (
     <>
@@ -94,9 +97,14 @@ const AdvancedFieldTypeSettings: React.FC<AdvancedFieldTypeSettingsProps> = ({ f
         value={fieldConfig.name || ''}
         defaultValue=''
         placeholder='e.g., customer_name'
-        style={{ marginBottom: 10 }}
+        style={{ marginBottom: 2 }}
         onChange={(value) => onUpdate('name', value)}
       />
+      {parameterName && (
+        <p style={{ fontSize: 12, color: 'grey', marginTop: 0, marginBottom: 10, marginLeft: 5 }}>
+          Use <b>${parameterName}</b> in a query to use the parameter.
+        </p>
+      )}
       <NeoField
         label='Label'
         key='label'

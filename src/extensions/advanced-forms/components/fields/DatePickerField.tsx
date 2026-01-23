@@ -22,15 +22,35 @@ export const DatePickerField: React.FC<FieldProps> = ({ config, value, error, on
   const displayFormat = fieldConfig.format || 'YYYY-MM-DD';
   const outputFormat = fieldConfig.outputFormat || displayFormat;
 
-  // Parse existing value using the output format
-  const dateValue = value ? dayjs(value, outputFormat) : null;
+  // Parse existing value using the output format, with safety checks
+  let dateValue: Dayjs | null = null;
+  if (value && typeof value === 'string') {
+    try {
+      const parsed = dayjs(value, outputFormat);
+      if (parsed.isValid()) {
+        dateValue = parsed;
+      }
+    } catch {
+      // Invalid date, keep null
+    }
+  }
 
   const handleChange = (newDate: Dayjs | null) => {
     if (newDate && newDate.isValid()) {
       // Output in the configured format for the query
-      onChange(newDate.format(outputFormat));
+      try {
+        onChange(newDate.format(outputFormat));
+      } catch {
+        onChange('');
+      }
     } else {
       onChange('');
+    }
+  };
+
+  const handleBlur = () => {
+    if (onBlur && typeof onBlur === 'function') {
+      onBlur();
     }
   };
 
@@ -48,7 +68,7 @@ export const DatePickerField: React.FC<FieldProps> = ({ config, value, error, on
               fullWidth: true,
               error: Boolean(error),
               helperText: error || fieldConfig.helperText,
-              onBlur,
+              onBlur: handleBlur,
               placeholder: fieldConfig.placeholder,
               size: 'small',
               sx: {

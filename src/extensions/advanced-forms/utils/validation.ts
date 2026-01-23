@@ -111,9 +111,10 @@ export function validateForButton(
 /**
  * Get field values formatted for Cypher query parameters
  *
+ * All parameters are prefixed with `neodash_` to follow the standard convention.
  * Handles special cases like link fields which produce two parameters:
- * - `${fieldname}_url` for the URL
- * - `${fieldname}_name` for the display name
+ * - `neodash_${fieldname}_url` for the URL
+ * - `neodash_${fieldname}_name` for the display name
  *
  * @param fields - Array of field configurations
  * @param values - Current form values
@@ -127,15 +128,16 @@ export function getQueryParameters(
 
   fields.forEach((field) => {
     const value = values[field.name];
+    const paramName = `neodash_${field.name}`;
 
     if (field.type === 'link') {
       // Link field produces two parameters
       const linkValue: LinkValue = value || { url: '', name: '' };
-      params[`${field.name}_url`] = linkValue.url || '';
-      params[`${field.name}_name`] = linkValue.name || '';
+      params[`${paramName}_url`] = linkValue.url || '';
+      params[`${paramName}_name`] = linkValue.name || '';
     } else {
       // All other fields produce a single parameter
-      params[field.name] = value ?? '';
+      params[paramName] = value ?? '';
     }
   });
 

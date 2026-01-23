@@ -87,10 +87,13 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
   };
 
   // Get display name for a field in the list
-  const getFieldDisplayName = (field: FieldConfig) => {
+  const getFieldDisplayName = (field: FieldConfig | undefined) => {
+    if (!field) {
+      return '(undefined)';
+    }
     if (field.name) {
       const typeLabel = getFieldTypeLabel(field.type);
-      return `$${field.name}${typeLabel ? ` (${typeLabel})` : ''}`;
+      return `$neodash_${field.name}${typeLabel ? ` (${typeLabel})` : ''}`;
     }
     return '(undefined)';
   };
@@ -114,7 +117,10 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
   };
 
   // Get display name for a button in the list
-  const getButtonDisplayName = (button: ButtonConfig) => {
+  const getButtonDisplayName = (button: ButtonConfig | undefined) => {
+    if (!button) {
+      return '(undefined)';
+    }
     return `${button.label} (${button.variant})`;
   };
 
@@ -190,20 +196,22 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
               updateFields(newItems.map(({ id: _id, ...rest }) => rest as FieldConfig));
             }}
             renderItem={(item, index) => (
-              <SortableList.Item id={index + 1}>
+              <SortableList.Item id={item.id}>
                 <Banner
-                  key={index + 1}
-                  id={`field-${index}`}
+                  key={item.id}
+                  id={`field-${item.id}`}
                   description={
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                       <span style={{ lineHeight: '32px', display: 'flex', alignItems: 'center' }}>
-                        <SortableList.DragHandle /> {getFieldDisplayName(fields[index])}
+                        <SortableList.DragHandle /> {getFieldDisplayName(item)}
                       </span>
                       <div style={{ marginLeft: 'auto' }}>
                         <IconButton
                           aria-label='Edit field'
                           size='small'
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setSelectedFieldIndex(index);
                             setFieldModalOpen(true);
                           }}
@@ -213,8 +221,11 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
                         <IconButton
                           aria-label='Remove field'
                           size='small'
-                          onClick={() => {
-                            updateFields([...fields.slice(0, index), ...fields.slice(index + 1)]);
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const newFields = fields.filter((_, i) => i !== index);
+                            updateFields(newFields);
                           }}
                         >
                           <XMarkIconOutline />
@@ -242,20 +253,22 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
               updateButtons(newItems.map(({ id: _id, ...rest }) => rest as ButtonConfig));
             }}
             renderItem={(item, index) => (
-              <SortableList.Item id={index + 1}>
+              <SortableList.Item id={item.id}>
                 <Banner
-                  key={index + 1}
-                  id={`button-${index}`}
+                  key={item.id}
+                  id={`button-${item.id}`}
                   description={
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                       <span style={{ lineHeight: '32px', display: 'flex', alignItems: 'center' }}>
-                        <SortableList.DragHandle /> {getButtonDisplayName(buttons[index])}
+                        <SortableList.DragHandle /> {getButtonDisplayName(item)}
                       </span>
                       <div style={{ marginLeft: 'auto' }}>
                         <IconButton
                           aria-label='Edit button'
                           size='small'
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setSelectedButtonIndex(index);
                             setButtonModalOpen(true);
                           }}
@@ -265,8 +278,11 @@ const NeoAdvancedFormCardSettings: React.FC<NeoAdvancedFormCardSettingsProps> = 
                         <IconButton
                           aria-label='Remove button'
                           size='small'
-                          onClick={() => {
-                            updateButtons([...buttons.slice(0, index), ...buttons.slice(index + 1)]);
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const newButtons = buttons.filter((_, i) => i !== index);
+                            updateButtons(newButtons);
                           }}
                         >
                           <XMarkIconOutline />
