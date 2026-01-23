@@ -33,9 +33,23 @@ const HIDDEN_COLUMN_PREFIX = '__';
 const DEFAULT_PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 5;
 const TABLE_PAGINATION_PREFIX = 'table_pagination';
+const TABLE_COLUMN_VISIBILITY_PREFIX = 'table_column_visibility';
 
 const getTablePaginationKey = (pagenumber: string | number, cardId: string) =>
   `${TABLE_PAGINATION_PREFIX}__${pagenumber}__${cardId}`;
+
+const getColumnVisibilityKey = (pagenumber: string | number, cardId: string) =>
+  `${TABLE_COLUMN_VISIBILITY_PREFIX}__${pagenumber}__${cardId}`;
+
+const parseHiddenColumns = (value: any): string[] => {
+  if (!value || value === '[]') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+};
 
 const calculatePageSizeOptions = (defaultRowsPerPage: number): number[] => {
   const options = [...DEFAULT_PAGE_SIZE_OPTIONS];
@@ -96,6 +110,8 @@ const NeoTableChartComponent = (
   props: ChartProps & {
     sessionPageSize?: number;
     setSessionPageSize?: (key: string, value: number) => void;
+    sessionColumnVisibility?: GridColumnVisibilityModel;
+    setSessionColumnVisibility?: (key: string, value: GridColumnVisibilityModel) => void;
   }
 ) => {
   const transposed = props.settings && props.settings.transposed ? props.settings.transposed : false;
@@ -133,6 +149,10 @@ const NeoTableChartComponent = (
 
   const sessionKey = React.useMemo(() => {
     return id && pagenumber !== undefined ? getTablePaginationKey(pagenumber, id) : null;
+  }, [id, pagenumber]);
+
+  const columnVisibilitySessionKey = React.useMemo(() => {
+    return id && pagenumber !== undefined ? getColumnVisibilityKey(pagenumber, id) : null;
   }, [id, pagenumber]);
 
   const handlePaginationModelChange = React.useCallback(
@@ -219,12 +239,28 @@ const NeoTableChartComponent = (
       });
 
   useEffect(() => {
-    const hiddenColumns = Object.assign(
+    // If session has saved visibility, use it (user override takes precedence)
+    if (props.sessionColumnVisibility && Object.keys(props.sessionColumnVisibility).length > 0) {
+      setColumnVisibilityModel(props.sessionColumnVisibility);
+      return;
+    }
+
+    // Build initial visibility from settings and prefix convention
+    const hiddenByPrefix = Object.assign(
       {},
       ...columns.filter((x) => x.field.startsWith(HIDDEN_COLUMN_PREFIX)).map((x) => ({ [x.field]: false }))
     );
-    setColumnVisibilityModel(hiddenColumns);
-  }, [records]);
+
+    const configuredHiddenColumns = parseHiddenColumns(props.settings?.hiddenColumns);
+    const hiddenBySettings = Object.assign(
+      {},
+      ...columns
+        .filter((x) => configuredHiddenColumns.includes(x.headerName) || configuredHiddenColumns.includes(x.field))
+        .map((x) => ({ [x.field]: false }))
+    );
+
+    setColumnVisibilityModel({ ...hiddenByPrefix, ...hiddenBySettings });
+  }, [records, props.sessionColumnVisibility]);
 
   if (props.records == null || props.records.length == 0 || props.records[0].keys == null) {
     return <>No data, re-run the report.</>;
@@ -284,7 +320,12 @@ const NeoTableChartComponent = (
     },
     onPaginationModelChange: handlePaginationModelChange,
     columnVisibilityModel: columnVisibilityModel,
-    onColumnVisibilityModelChange: (newModel) => setColumnVisibilityModel(newModel),
+    onColumnVisibilityModelChange: (newModel) => {
+      setColumnVisibilityModel(newModel);
+      if (columnVisibilitySessionKey && props.setSessionColumnVisibility) {
+        props.setSessionColumnVisibility(columnVisibilitySessionKey, newModel);
+      }
+    },
     onCellClick: (e) => performActionOnElement(e, actionsRules, { ...props, pageNames: pageNames }, 'Click', 'Table'),
     onCellDoubleClick: (e) => {
       let rules = getRule(e, actionsRules, 'doubleClick');
@@ -404,14 +445,19 @@ const NeoTableChartComponent = (
 const mapStateToProps = (state: any, ownProps: ChartProps) => {
   const { id, pagenumber } = ownProps;
   let sessionPageSize: number | undefined;
+  let sessionColumnVisibility: GridColumnVisibilityModel | undefined;
   if (id && pagenumber !== undefined) {
     sessionPageSize = getSessionStorageValue(state, getTablePaginationKey(pagenumber, id));
+    sessionColumnVisibility = getSessionStorageValue(state, getColumnVisibilityKey(pagenumber, id));
   }
-  return { sessionPageSize };
+  return { sessionPageSize, sessionColumnVisibility };
 };
 
 const mapDispatchToProps = (dispatch: any) => ({
   setSessionPageSize: (key: string, value: number) => {
+    dispatch(setSessionStorageValue(key, value));
+  },
+  setSessionColumnVisibility: (key: string, value: GridColumnVisibilityModel) => {
     dispatch(setSessionStorageValue(key, value));
   },
 });
