@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { getDashboardIsEditable, getPageNumber } from '../../settings/SettingsSelectors';
 import { getDashboardSettings, getDashboardTitle } from '../DashboardSelectors';
 import { Button, SideNavigation, SideNavigationGroupHeader, SideNavigationList, TextInput } from '@neo4j-ndl/react';
-import { removeReportThunk } from '../../page/PageThunks';
+import { createNotificationThunk, removeReportThunk } from '../../page/PageThunks';
 import {
   PlusIconOutline,
   MagnifyingGlassIconOutline,
@@ -96,6 +96,7 @@ export const NeoDashboardSidebar = ({
   saveDashboardToNeo4j,
   deleteDashboardFromNeo4j,
   checkDashboardExists,
+  createNotification,
   standaloneSettings,
 }) => {
   const { driver } = useContext<Neo4jContextState>(Neo4jContext);
@@ -247,11 +248,9 @@ export const NeoDashboardSidebar = ({
           try {
             parsedDashboard = JSON.parse(text);
           } catch (e) {
-            // If JSON is invalid, let loadDashboard handle the error
+            // If JSON is invalid, show error and cancel import (do NOT create a draft)
             setModalOpen(Modal.NONE);
-            setDraft(true);
-            setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
-            loadDashboard(createUUID(), text);
+            createNotification('Unable to load dashboard', `Invalid JSON: ${e.message}`);
             return;
           }
 
@@ -670,6 +669,9 @@ const mapDispatchToProps = (dispatch) => ({
   },
   checkDashboardExists: (driver: any, database: string, uuid: string, callback) => {
     dispatch(checkDashboardExistsThunk(driver, database, uuid, callback));
+  },
+  createNotification: (title: string, message: string) => {
+    dispatch(createNotificationThunk(title, message));
   },
 });
 
