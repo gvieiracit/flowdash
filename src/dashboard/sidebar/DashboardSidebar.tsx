@@ -243,26 +243,49 @@ export const NeoDashboardSidebar = ({
       <NeoDashboardSidebarImportModal
         open={modalOpen == Modal.IMPORT}
         onImport={(text) => {
-          // Parse the JSON to extract UUID and title
+          // Validate the JSON structure thoroughly before doing anything
+          // This prevents creating a draft if the dashboard will fail to load
           let parsedDashboard;
           try {
             parsedDashboard = JSON.parse(text);
+
+            // Validate required dashboard structure
+            if (typeof parsedDashboard !== 'object' || parsedDashboard === null) {
+              throw new Error('Dashboard must be a valid JSON object');
+            }
+
+            // Check for basic required structure (pages array is essential)
+            if (!Array.isArray(parsedDashboard.pages)) {
+              throw new Error('Dashboard must have a "pages" array');
+            }
+
+            // Validate each page has required structure
+            parsedDashboard.pages.forEach((page, index) => {
+              if (!Array.isArray(page.reports)) {
+                throw new Error(`Page ${index + 1} must have a "reports" array`);
+              }
+            });
           } catch (e) {
-            // If JSON is invalid, show error and cancel import (do NOT create a draft)
+            // If JSON is invalid or structure is wrong, show error and cancel import (do NOT create a draft)
             setModalOpen(Modal.NONE);
-            createNotification('Unable to load dashboard', `Invalid JSON: ${e.message}`);
+            createNotification('Unable to load dashboard', e.message || String(e));
             return;
           }
 
           const importUuid = parsedDashboard.uuid;
           const importTitle = parsedDashboard.title || 'Untitled Dashboard';
 
-          // If no UUID in the JSON, import directly with a new UUID
-          if (!importUuid) {
+          // Helper function to perform the actual import
+          const performImport = (uuid: string, dashboardText: string) => {
             setModalOpen(Modal.NONE);
             setDraft(true);
             setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
-            loadDashboard(createUUID(), text);
+            loadDashboard(uuid, dashboardText);
+          };
+
+          // If no UUID in the JSON, import directly with a new UUID
+          if (!importUuid) {
+            performImport(createUUID(), text);
             return;
           }
 
@@ -279,10 +302,7 @@ export const NeoDashboardSidebar = ({
               setModalOpen(Modal.IMPORT_COLLISION);
             } else {
               // No collision - proceed with import
-              setModalOpen(Modal.NONE);
-              setDraft(true);
-              setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
-              loadDashboard(importUuid, text);
+              performImport(importUuid, text);
             }
           });
         }}
