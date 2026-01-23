@@ -69,6 +69,11 @@ const _REPORT_TYPES = {
         values: [true, false],
         default: false,
       },
+      defaultRowsPerPage: {
+        label: 'Default Rows Per Page',
+        type: SELECTION_TYPES.NUMBER,
+        default: 5,
+      },
     },
   },
   graph: {

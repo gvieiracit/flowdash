@@ -21,6 +21,8 @@ export interface ChartProps {
   fields: (fields) => string[]; // List of fields (return values) available for the report.
   setFields?: (fields) => void; // Update the list of fields for this report.
   theme?: string; // Dashboard theme value.
+  id?: string; // Unique identifier for the report/card.
+  pagenumber?: string | number; // Page number that the report is on.
 }
 
 /**
