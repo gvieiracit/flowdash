@@ -106,6 +106,16 @@ export const EXTENSIONS: Record<string, Extension> = {
     link: 'https://github.com/gvieiracit/flowdash',
     settingsMenuButton: CypherUploadButton,
   },
+  'advanced-forms': {
+    name: 'advanced-forms',
+    label: 'Advanced Forms',
+    author: 'CI&T',
+    image: 'advanced-forms.png',
+    enabled: true,
+    description:
+      'Build powerful multi-field forms with text, textarea, dropdown, checkbox, radio buttons, date pickers, and link fields. Configure conditional validation rules, multiple submit buttons with independent Cypher queries, and an always-visible reset option. Perfect for complex data entry workflows.',
+    link: 'https://github.com/gvieiracit/flowdash',
+  },
 };
 
 /**

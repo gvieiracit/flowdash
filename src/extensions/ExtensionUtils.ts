@@ -5,6 +5,9 @@ import { ADVANCED_REPORT_TYPES } from './advancedcharts/AdvancedChartsReportConf
 import { EXAMPLE_ADVANCED_REPORTS } from './advancedcharts/AdvancedChartsExampleConfig';
 import { FORMS } from './forms/FormsReportConfig';
 import { EXAMPLE_FORMS } from './forms/FormsExampleConfig';
+import { ADVANCED_FORMS } from './advanced-forms/AdvancedFormsReportConfig';
+import { EXAMPLE_ADVANCED_FORMS } from './advanced-forms/AdvancedFormsExampleConfig';
+
 // Components can call this to check if any extension is enabled. For example, to decide whether to all rule-based styling.
 export const extensionEnabled = (extensions, name) => {
   return extensions[name]?.active;
@@ -19,6 +22,9 @@ export const getReportTypes = (extensions) => {
   if (extensions?.forms?.active) {
     charts = { ...charts, ...FORMS };
   }
+  if (extensions?.['advanced-forms']?.active) {
+    charts = { ...charts, ...ADVANCED_FORMS };
+  }
   return charts;
 };
 
@@ -30,6 +36,9 @@ export const getExampleReports = (extensions) => {
   }
   if (extensions?.forms?.active) {
     examples = [...examples, ...EXAMPLE_FORMS];
+  }
+  if (extensions?.['advanced-forms']?.active) {
+    examples = [...examples, ...EXAMPLE_ADVANCED_FORMS];
   }
   return examples;
 };
