@@ -262,6 +262,8 @@ export const NeoReport = ({
         style={{ height: '100%', marginTop: '0px', overflow: reportTypes[type].allowScrolling ? 'auto' : 'hidden' }}
       >
         <ChartType
+          id={id}
+          pagenumber={pagenumber}
           setPageNumber={setPageNumber}
           records={records}
           extensions={extensions}
@@ -305,6 +307,8 @@ export const NeoReport = ({
           </div>
         </div>
         <ChartType
+          id={id}
+          pagenumber={pagenumber}
           setPageNumber={setPageNumber}
           records={records}
           extensions={extensions}

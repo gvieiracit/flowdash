@@ -24,9 +24,33 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import { extensionEnabled } from '../../utils/ReportUtils';
 import { getCheckboxes, hasCheckboxes, updateCheckBoxes } from './TableActionsHelper';
+import { connect } from 'react-redux';
+import { setSessionStorageValue } from '../../sessionStorage/SessionStorageActions';
+import { getSessionStorageValue } from '../../sessionStorage/SessionStorageSelectors';
 
 const TABLE_ROW_HEIGHT = 52;
 const HIDDEN_COLUMN_PREFIX = '__';
+const DEFAULT_PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 5;
+const TABLE_PAGINATION_PREFIX = 'table_pagination';
+
+const getTablePaginationKey = (pagenumber: string | number, cardId: string) =>
+  `${TABLE_PAGINATION_PREFIX}__${pagenumber}__${cardId}`;
+
+const calculatePageSizeOptions = (defaultRowsPerPage: number): number[] => {
+  const options = [...DEFAULT_PAGE_SIZE_OPTIONS];
+  if (!options.includes(defaultRowsPerPage) && defaultRowsPerPage > 0) {
+    options.push(defaultRowsPerPage);
+    options.sort((a, b) => a - b);
+  }
+  return options;
+};
+
+const validatePageSize = (value: any, fallback: number): number => {
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) || parsed <= 0 ? fallback : parsed;
+};
+
 const theme = createTheme({
   typography: {
     fontFamily: "'Nunito Sans', sans-serif !important",
@@ -68,7 +92,12 @@ export const generateSafeColumnKey = (key) => {
   return key != 'id' ? key : `${key} `;
 };
 
-export const NeoTableChart = (props: ChartProps) => {
+const NeoTableChartComponent = (
+  props: ChartProps & {
+    sessionPageSize?: number;
+    setSessionPageSize?: (key: string, value: number) => void;
+  }
+) => {
   const transposed = props.settings && props.settings.transposed ? props.settings.transposed : false;
   const wrapContent = props.settings && props.settings.wrapContent ? props.settings.wrapContent : false;
   const allowDownload =
@@ -87,6 +116,34 @@ export const NeoTableChart = (props: ChartProps) => {
 
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [columnVisibilityModel, setColumnVisibilityModel] = React.useState<GridColumnVisibilityModel>({});
+
+  // Pagination state management
+  const { id, pagenumber } = props;
+  const defaultRowsPerPage = validatePageSize(props.settings?.defaultRowsPerPage, DEFAULT_PAGE_SIZE);
+  const pageSizeOptions = React.useMemo(() => calculatePageSizeOptions(defaultRowsPerPage), [defaultRowsPerPage]);
+
+  const initialPageSize = React.useMemo(() => {
+    if (props.sessionPageSize !== undefined && props.sessionPageSize > 0) {
+      return props.sessionPageSize;
+    }
+    return defaultRowsPerPage;
+  }, [props.sessionPageSize, defaultRowsPerPage]);
+
+  const [currentPageSize, setCurrentPageSize] = React.useState(initialPageSize);
+
+  const sessionKey = React.useMemo(() => {
+    return id && pagenumber !== undefined ? getTablePaginationKey(pagenumber, id) : null;
+  }, [id, pagenumber]);
+
+  const handlePaginationModelChange = React.useCallback(
+    (model: { pageSize: number; page: number }) => {
+      setCurrentPageSize(model.pageSize);
+      if (sessionKey && props.setSessionPageSize) {
+        props.setSessionPageSize(sessionKey, model.pageSize);
+      }
+    },
+    [sessionKey, props.setSessionPageSize]
+  );
 
   const useStyles = generateClassDefinitionsBasedOnRules(styleRules);
   const classes = useStyles();
@@ -216,15 +273,16 @@ export const NeoTableChart = (props: ChartProps) => {
     rowHeight: tableRowHeight,
     rows: rows,
     columns: columns,
-    pageSizeOptions: [5, 10, 25, 50, 100],
+    pageSizeOptions: pageSizeOptions,
     initialState: {
       pagination: {
         paginationModel: {
-          pageSize: 5,
-          pageIndex: 0,
+          pageSize: currentPageSize,
+          page: 0,
         },
       },
     },
+    onPaginationModelChange: handlePaginationModelChange,
     columnVisibilityModel: columnVisibilityModel,
     onColumnVisibilityModelChange: (newModel) => setColumnVisibilityModel(newModel),
     onCellClick: (e) => performActionOnElement(e, actionsRules, { ...props, pageNames: pageNames }, 'Click', 'Table'),
@@ -343,4 +401,21 @@ export const NeoTableChart = (props: ChartProps) => {
   );
 };
 
+const mapStateToProps = (state: any, ownProps: ChartProps) => {
+  const { id, pagenumber } = ownProps;
+  let sessionPageSize: number | undefined;
+  if (id && pagenumber !== undefined) {
+    sessionPageSize = getSessionStorageValue(state, getTablePaginationKey(pagenumber, id));
+  }
+  return { sessionPageSize };
+};
+
+const mapDispatchToProps = (dispatch: any) => ({
+  setSessionPageSize: (key: string, value: number) => {
+    dispatch(setSessionStorageValue(key, value));
+  },
+});
+
+const NeoTableChart = connect(mapStateToProps, mapDispatchToProps)(NeoTableChartComponent);
+export { NeoTableChart };
 export default NeoTableChart;
