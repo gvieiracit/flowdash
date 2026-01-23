@@ -74,6 +74,11 @@ const _REPORT_TYPES = {
         type: SELECTION_TYPES.NUMBER,
         default: 5,
       },
+      hiddenColumns: {
+        label: 'Hide Columns',
+        type: SELECTION_TYPES.TEXT,
+        default: '[]',
+      },
     },
   },
   graph: {
