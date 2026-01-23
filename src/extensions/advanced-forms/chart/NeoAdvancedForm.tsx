@@ -25,7 +25,8 @@ import { validateForButton, getQueryParameters, initializeFormValues } from '../
 
 /**
  * Parse the form configuration from settings
- * Handles both JSON string and object formats
+ * Supports both new settings structure (advancedFormFields/advancedFormButtons)
+ * and legacy JSON string format (advancedFormConfig) for backwards compatibility
  */
 function parseFormConfig(settings: Record<string, any> | undefined): AdvancedFormConfig {
   const defaultConfig: AdvancedFormConfig = {
@@ -38,26 +39,44 @@ function parseFormConfig(settings: Record<string, any> | undefined): AdvancedFor
     clearAfterSubmit: false,
   };
 
-  if (!settings?.advancedFormConfig) {
+  if (!settings) {
     return defaultConfig;
   }
 
-  let config = settings.advancedFormConfig;
-
-  // Parse JSON string if needed
-  if (typeof config === 'string') {
-    try {
-      config = JSON.parse(config);
-    } catch (e) {
-      console.error('Failed to parse Advanced Form configuration:', e);
-      return defaultConfig;
-    }
+  // New settings structure (visual builder)
+  if (settings.advancedFormFields || settings.advancedFormButtons) {
+    return {
+      fields: settings.advancedFormFields || [],
+      buttons: settings.advancedFormButtons || [],
+      showReset: settings.showReset !== false,
+      resetLabel: settings.resetLabel || 'Clear Form',
+      resetPosition: settings.resetPosition || 'left',
+      successMessage: settings.successMessage || 'Form submitted successfully.',
+      clearAfterSubmit: settings.clearAfterSubmit === true,
+    };
   }
 
-  return {
-    ...defaultConfig,
-    ...config,
-  };
+  // Legacy JSON string format (backwards compatibility)
+  if (settings.advancedFormConfig) {
+    let config = settings.advancedFormConfig;
+
+    // Parse JSON string if needed
+    if (typeof config === 'string') {
+      try {
+        config = JSON.parse(config);
+      } catch (e) {
+        console.error('Failed to parse Advanced Form configuration:', e);
+        return defaultConfig;
+      }
+    }
+
+    return {
+      ...defaultConfig,
+      ...config,
+    };
+  }
+
+  return defaultConfig;
 }
 
 const NeoAdvancedForm: React.FC<ChartProps> = (props) => {
