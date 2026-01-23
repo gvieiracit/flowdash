@@ -485,6 +485,44 @@ export const loadDashboardFromNeo4jByNameThunk =
     }
   };
 
+export const checkDashboardExistsThunk =
+  (driver, database, uuid, callback: (result: { exists: boolean; title?: string; uuid?: string }) => void) =>
+  (dispatch: any) => {
+    try {
+      const query = `
+        MATCH (d:_Neodash_Dashboard {uuid: $uuid})
+        RETURN d.title AS title, d.uuid AS uuid
+        LIMIT 1
+      `;
+      runCypherQuery(
+        driver,
+        database,
+        query,
+        { uuid },
+        1,
+        (status) => {
+          if (status == QueryStatus.NO_DATA) {
+            callback({ exists: false });
+          }
+        },
+        (records) => {
+          if (records && records.length > 0 && records[0]._fields) {
+            callback({
+              exists: true,
+              title: records[0]._fields[0],
+              uuid: records[0]._fields[1],
+            });
+          } else {
+            callback({ exists: false });
+          }
+        }
+      );
+    } catch (e) {
+      dispatch(createNotificationThunk('Unable to check dashboard existence', e));
+      callback({ exists: false });
+    }
+  };
+
 export const loadDashboardListFromNeo4jThunk = (driver, database, callback) => (dispatch: any) => {
   function setStatus(status) {
     if (status == QueryStatus.NO_DATA) {

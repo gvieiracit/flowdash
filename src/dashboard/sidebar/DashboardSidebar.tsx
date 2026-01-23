@@ -27,6 +27,7 @@ import NeoDashboardSidebarCreateModal from './modal/DashboardSidebarCreateModal'
 import NeoDashboardSidebarDatabaseMenu from './menu/DashboardSidebarDatabaseMenu';
 import NeoDashboardSidebarDashboardMenu from './menu/DashboardSidebarDashboardMenu';
 import {
+  checkDashboardExistsThunk,
   deleteDashboardFromNeo4jThunk,
   loadDashboardFromNeo4jThunk,
   loadDashboardListFromNeo4jThunk,
@@ -39,6 +40,7 @@ import NeoDashboardSidebarSaveModal from './modal/DashboardSidebarSaveModal';
 import { getDashboardJson } from '../../modal/ModalSelectors';
 import NeoDashboardSidebarCreateMenu from './menu/DashboardSidebarCreateMenu';
 import NeoDashboardSidebarImportModal from './modal/DashboardSidebarImportModal';
+import NeoDashboardSidebarImportCollisionModal from './modal/DashboardSidebarImportCollisionModal';
 import { createUUID } from '../../utils/uuid';
 import NeoDashboardSidebarExportModal from './modal/DashboardSidebarExportModal';
 import NeoDashboardSidebarDeleteModal from './modal/DashboardSidebarDeleteModal';
@@ -69,6 +71,7 @@ enum Modal {
   SAVE = 8,
   NONE = 9,
   ACCESS = 10,
+  IMPORT_COLLISION = 11,
 }
 
 // We use "index = -1" to represent a non-saved draft dashboard in the sidebar's dashboard list.
@@ -92,6 +95,7 @@ export const NeoDashboardSidebar = ({
   loadDashboardFromNeo4j,
   saveDashboardToNeo4j,
   deleteDashboardFromNeo4j,
+  checkDashboardExists,
   standaloneSettings,
 }) => {
   const { driver } = useContext<Neo4jContextState>(Neo4jContext);
@@ -106,6 +110,12 @@ export const NeoDashboardSidebar = ({
   const [modalOpen, setModalOpen] = useState(Modal.NONE);
   const [dashboards, setDashboards] = React.useState([]);
   const [cachedDashboard, setCachedDashboard] = React.useState('');
+  const [pendingImport, setPendingImport] = useState<{
+    text: string;
+    importingTitle: string;
+    existingTitle: string;
+    uuid: string;
+  } | null>(null);
 
   const getDashboardListFromNeo4j = () => {
     // Retrieves list of all dashboards stored in a given database.
@@ -232,12 +242,89 @@ export const NeoDashboardSidebar = ({
       <NeoDashboardSidebarImportModal
         open={modalOpen == Modal.IMPORT}
         onImport={(text) => {
-          setModalOpen(Modal.NONE);
-          setDraft(true);
-          setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
-          loadDashboard(createUUID(), text);
+          // Parse the JSON to extract UUID and title
+          let parsedDashboard;
+          try {
+            parsedDashboard = JSON.parse(text);
+          } catch (e) {
+            // If JSON is invalid, let loadDashboard handle the error
+            setModalOpen(Modal.NONE);
+            setDraft(true);
+            setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+            loadDashboard(createUUID(), text);
+            return;
+          }
+
+          const importUuid = parsedDashboard.uuid;
+          const importTitle = parsedDashboard.title || 'Untitled Dashboard';
+
+          // If no UUID in the JSON, import directly with a new UUID
+          if (!importUuid) {
+            setModalOpen(Modal.NONE);
+            setDraft(true);
+            setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+            loadDashboard(createUUID(), text);
+            return;
+          }
+
+          // Check if a dashboard with this UUID already exists
+          checkDashboardExists(driver, dashboardDatabase, importUuid, (result) => {
+            if (result.exists) {
+              // Collision detected - show resolution modal
+              setPendingImport({
+                text,
+                importingTitle: importTitle,
+                existingTitle: result.title || 'Unknown Dashboard',
+                uuid: importUuid,
+              });
+              setModalOpen(Modal.IMPORT_COLLISION);
+            } else {
+              // No collision - proceed with import
+              setModalOpen(Modal.NONE);
+              setDraft(true);
+              setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+              loadDashboard(importUuid, text);
+            }
+          });
         }}
         handleClose={() => setModalOpen(Modal.NONE)}
+      />
+
+      <NeoDashboardSidebarImportCollisionModal
+        open={modalOpen == Modal.IMPORT_COLLISION}
+        existingTitle={pendingImport?.existingTitle || ''}
+        importingTitle={pendingImport?.importingTitle || ''}
+        onReplace={() => {
+          // Replace: import with the original UUID (will overwrite on save)
+          if (pendingImport) {
+            setModalOpen(Modal.NONE);
+            setDraft(true);
+            setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+            loadDashboard(pendingImport.uuid, pendingImport.text);
+            setPendingImport(null);
+          }
+        }}
+        onCancel={() => {
+          // Cancel: close modal without importing
+          setModalOpen(Modal.NONE);
+          setPendingImport(null);
+        }}
+        onImportAsNew={() => {
+          // Import as New: generate a new UUID and import
+          if (pendingImport) {
+            const newUuid = createUUID();
+            // Modify the dashboard JSON to use the new UUID
+            const parsedDashboard = JSON.parse(pendingImport.text);
+            parsedDashboard.uuid = newUuid;
+            const modifiedText = JSON.stringify(parsedDashboard, null, 2);
+
+            setModalOpen(Modal.NONE);
+            setDraft(true);
+            setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+            loadDashboard(newUuid, modifiedText);
+            setPendingImport(null);
+          }
+        }}
       />
 
       <NeoDashboardSidebarInfoModal
@@ -580,6 +667,9 @@ const mapDispatchToProps = (dispatch) => ({
   },
   deleteDashboardFromNeo4j: (driver: any, database: string, uuid: string, onSuccess) => {
     dispatch(deleteDashboardFromNeo4jThunk(driver, database, uuid, onSuccess));
+  },
+  checkDashboardExists: (driver: any, database: string, uuid: string, callback) => {
+    dispatch(checkDashboardExistsThunk(driver, database, uuid, callback));
   },
 });
 
