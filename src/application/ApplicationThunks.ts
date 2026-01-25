@@ -436,7 +436,9 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     dispatch(setSSOProviders(config.ssoProviders));
 
     // Check if we are in standalone mode
-    const standalone = config.standalone || urlParams.get('standalone') == 'Yes';
+    // devMode=true allows team members to bypass standalone mode and access the connection form
+    const devMode = urlParams.get('devMode') === 'true';
+    const standalone = !devMode && (config.standalone || urlParams.get('standalone') == 'Yes');
 
     // if a dashboard database was previously set, remember to use it.
     const dashboardDatabase = state.application.standaloneDashboardDatabase;
