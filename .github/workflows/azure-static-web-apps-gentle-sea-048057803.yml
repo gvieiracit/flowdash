@@ -19,6 +19,9 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Set production credentials
+        run: |
+          sed -i 's/<PROD_PASSWORD>/${{ secrets.NEO4J_PROD_PASSWORD }}/g' public/config.json
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
