@@ -9,3 +9,4 @@ If you'd like to continue building dashboards, you have the following options:
 2. If you'd like to keep using NeoDash for free, you can fork this repository and [run NeoDash yourself](https://github.com/neo4j-labs/neodash/blob/master/about.md).
 3. If you're in need of a supported version of NeoDash, you can [purchase](https://neo4j.com/docs/neodash-commercial/current/#_getting_access_to_neodash_commercial) a NeoDash commercial license together with a Neo4j Enterprise license.  
 
+
