@@ -57,9 +57,14 @@ const NeoForm = (props: ChartProps) => {
     }
 
     switch (submitMode) {
-      case 'atLeastOne':
-        // Enable if at least one parameter has a value
-        return !checkAtLeastOneParameterDefined(parameterNames, props.parameters);
+      case 'atLeastOne': {
+        // Get all form field parameter names
+        const formFieldParams = formFields
+          .map((f: any) => f.settings?.parameterName)
+          .filter(Boolean);
+        // Enable if at least one form field has a value
+        return !checkAtLeastOneParameterDefined(formFieldParams, props.parameters);
+      }
 
       case 'requiredOnly': {
         // Only check parameters marked as required
