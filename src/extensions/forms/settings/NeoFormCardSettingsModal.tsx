@@ -1,7 +1,7 @@
 // TODO: this file (in a way) belongs to chart/parameter/ParameterSelectionChart. It would make sense to move it there
 
 import React from 'react';
-import { Button, Dialog } from '@neo4j-ndl/react';
+import { Button, Dialog, Checkbox } from '@neo4j-ndl/react';
 import ParameterSelectCardSettings from '../../../chart/parameter/ParameterSelectCardSettings';
 import NeoCardSettingsFooter from '../../../card/settings/CardSettingsFooter';
 import { objMerge } from '../../../utils/ObjectManipulation';
@@ -42,6 +42,21 @@ const NeoFormCardSettingsModal = ({ open, setOpen, index, formFields, setFormFie
                 setFormFields(newFormFields);
               }}
             />
+
+            <div style={{ marginTop: 15, marginLeft: 15 }}>
+              <Checkbox
+                label='Required field'
+                checked={formFields[index]?.settings?.required ?? false}
+                onChange={(e) => {
+                  const newFormFields = [...formFields];
+                  newFormFields[index].settings.required = e.target.checked;
+                  setFormFields(newFormFields);
+                }}
+              />
+              <p style={{ fontSize: 12, color: 'grey', marginTop: 5 }}>
+                Mark this field as required. Used when Submit Mode is set to &quot;requiredOnly&quot;.
+              </p>
+            </div>
 
             <Button
               onClick={() => {

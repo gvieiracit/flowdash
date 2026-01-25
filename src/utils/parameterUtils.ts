@@ -37,3 +37,29 @@ export const checkParametersNameInGlobalParameter = (parameterNames: string[], g
   }
   return false;
 };
+
+/**
+ * Checks if at least one parameter has a non-empty value.
+ *
+ * @param {string[]} parameterNames An array of parameter names to check.
+ * @param {object} globalParameterNames The object containing global parameter values.
+ * @returns {boolean} True if at least one parameter has a value, false if all are empty.
+ */
+export const checkAtLeastOneParameterDefined = (
+  parameterNames: string[],
+  globalParameterNames: any
+): boolean => {
+  for (const key of parameterNames) {
+    const value = globalParameterNames[key];
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
+};
