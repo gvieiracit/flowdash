@@ -236,6 +236,12 @@ export const setCustomHeader = (customHeader: any) => ({
   payload: { customHeader },
 });
 
+export const SET_DEV_MODE = 'APPLICATION/SET_DEV_MODE';
+export const setDevMode = (devMode: boolean) => ({
+  type: SET_DEV_MODE,
+  payload: { devMode },
+});
+
 export const SET_DEPRECATION_NOTICE = 'APPLICATION/SET_DEPRECATION_NOTICE';
 export const setDeprecationNotice = (deprecated: boolean) => ({
   type: SET_DEPRECATION_NOTICE,

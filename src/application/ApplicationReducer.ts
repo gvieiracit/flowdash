@@ -39,6 +39,7 @@ import {
   SET_WAIT_FOR_SSO,
   SET_WELCOME_SCREEN_OPEN,
   SET_CUSTOM_HEADER,
+  SET_DEV_MODE,
   SET_DEPRECATION_NOTICE,
 } from './ApplicationActions';
 import {
@@ -72,6 +73,7 @@ const initialState = {
   dashboardToLoadAfterConnecting: null,
   waitForSSO: false,
   standalone: false,
+  devMode: false,
   logging: LOGGING_INITIAL_STATE,
 };
 export const applicationReducer = (state = initialState, action: { type: any; payload: any }) => {
@@ -321,6 +323,11 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
     case SET_CUSTOM_HEADER: {
       const { customHeader } = payload;
       state = update(state, { customHeader: customHeader });
+      return state;
+    }
+    case SET_DEV_MODE: {
+      const { devMode } = payload;
+      state = update(state, { devMode: devMode });
       return state;
     }
     case SET_DEPRECATION_NOTICE: {

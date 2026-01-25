@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { setDashboardTitle } from '../DashboardActions';
 import { getDashboardSettings, getDashboardTheme, getDashboardTitle, getPages } from '../DashboardSelectors';
 import { setConnectionModalOpen } from '../../application/ApplicationActions';
-import { applicationGetStandaloneSettings, applicationGetCustomHeader } from '../../application/ApplicationSelectors';
+import { applicationGetStandaloneSettings, applicationGetCustomHeader, applicationGetDevMode } from '../../application/ApplicationSelectors';
 import { getDashboardIsEditable, getPageNumber } from '../../settings/SettingsSelectors';
 import { NeoDashboardHeaderLogo } from './DashboardHeaderLogo';
 import NeoAboutButton from './DashboardHeaderAboutButton';
@@ -26,6 +26,7 @@ export const NeoDashboardHeader = ({
   resetApplication,
   themeMode,
   setTheme,
+  devMode,
 }) => {
   const downloadImageEnabled = settings ? settings.downloadImageEnabled : false;
   const [dashboardTitleText, setDashboardTitleText] = React.useState(dashboardTitle);
@@ -52,9 +53,28 @@ export const NeoDashboardHeader = ({
         <div className='n-flex n-justify-between n-h-16 n-items-center n-py-6 md:n-justify-start md:n-space-x-10 n-mx-4'>
           <NeoDashboardHeaderLogo resetApplication={resetApplication} />
           <nav className='n-items-center n-justify-center n-flex n-flex-1 n-w-full n-font-semibold'>
-            {customHeader && customHeader.length > 0
-              ? `${customHeader}`
-              : `${connection.protocol}://${connection.url}:${connection.port}`}
+            {devMode ? (
+              <>
+                {`${connection.protocol}://${connection.url}:${connection.port}`}
+                {connection.url === standaloneSettings.standaloneHost && (
+                  <span style={{
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    marginLeft: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    PROD
+                  </span>
+                )}
+              </>
+            ) : (
+              customHeader && customHeader.length > 0
+                ? customHeader
+                : `${connection.protocol}://${connection.url}:${connection.port}`
+            )}
           </nav>
           <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0 n-gap-6'>
             <div className='n-flex n-flex-row n-gap-x-2'>
@@ -88,6 +108,7 @@ const mapStateToProps = (state) => ({
   dashboardTitle: getDashboardTitle(state),
   standaloneSettings: applicationGetStandaloneSettings(state),
   customHeader: applicationGetCustomHeader(state),
+  devMode: applicationGetDevMode(state),
   pages: getPages(state),
   settings: getDashboardSettings(state),
   editable: getDashboardIsEditable(state),

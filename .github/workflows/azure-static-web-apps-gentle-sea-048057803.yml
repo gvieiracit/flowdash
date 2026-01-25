@@ -19,6 +19,15 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Set production credentials
+        run: |
+          sed -i 's/<NEO4J_PROTOCOL>/${{ secrets.NEO4J_PROTOCOL }}/g' public/config.json
+          sed -i 's/<NEO4J_HOST>/${{ secrets.NEO4J_HOST }}/g' public/config.json
+          sed -i 's/<NEO4J_PORT>/${{ secrets.NEO4J_PORT }}/g' public/config.json
+          sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json
+          sed -i 's/<NEO4J_USERNAME>/${{ secrets.NEO4J_USERNAME }}/g' public/config.json
+          sed -i 's/<NEO4J_PASSWORD>/${{ secrets.NEO4J_PASSWORD }}/g' public/config.json
+          sed -i 's/<NEO4J_CUSTOMHEADER>/${{ secrets.NEO4J_CUSTOMHEADER }}/g' public/config.json
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
