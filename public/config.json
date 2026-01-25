@@ -9,6 +9,7 @@
   "standaloneDatabase": "<NEO4J_DATABASE>",
   "standaloneUsername": "<NEO4J_USERNAME>",
   "standalonePassword": "<NEO4J_PASSWORD>",
+  "standalonePasswordWarningHidden": true,
   "standaloneDashboardName": "My Dashboard",
   "standaloneDashboardDatabase": "<NEO4J_DATABASE>",
   "standaloneDashboardURL": "",
@@ -18,5 +19,5 @@
   "standaloneDatabaseList": "<NEO4J_DATABASE>",
   "loggingMode": "0",
   "loggingDatabase": "logs",
-  "customHeader": ""
+  "customHeader": "<NEO4J_CUSTOMHEADER>"
 }

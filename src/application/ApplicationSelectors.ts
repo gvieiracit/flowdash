@@ -133,3 +133,7 @@ export const applicationGetDebugState = (state: any) => {
 export const applicationGetCustomHeader = (state: any) => {
   return state.application.customHeader;
 };
+
+export const applicationGetDevMode = (state: any) => {
+  return state.application.devMode;
+};

@@ -27,6 +27,7 @@ jobs:
           sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json
           sed -i 's/<NEO4J_USERNAME>/${{ secrets.NEO4J_USERNAME }}/g' public/config.json
           sed -i 's/<NEO4J_PASSWORD>/${{ secrets.NEO4J_PASSWORD }}/g' public/config.json
+          sed -i 's/<NEO4J_CUSTOMHEADER>/${{ secrets.NEO4J_CUSTOMHEADER }}/g' public/config.json
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1

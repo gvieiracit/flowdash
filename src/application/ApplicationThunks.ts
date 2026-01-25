@@ -40,6 +40,7 @@ import {
   setReportHelpModalOpen,
   setDraft,
   setCustomHeader,
+  setDevMode,
   setDeprecationNotice,
 } from './ApplicationActions';
 import { setLoggingMode, setLoggingDatabase, setLogErrorNotification } from './logging/LoggingActions';
@@ -439,6 +440,7 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     // devMode=true allows team members to bypass standalone mode and access the connection form
     const devMode = urlParams.get('devMode') === 'true';
     const standalone = !devMode && (config.standalone || urlParams.get('standalone') == 'Yes');
+    dispatch(setDevMode(devMode));
 
     // if a dashboard database was previously set, remember to use it.
     const dashboardDatabase = state.application.standaloneDashboardDatabase;
