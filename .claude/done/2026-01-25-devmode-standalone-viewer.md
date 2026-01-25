@@ -1,8 +1,8 @@
 # DevMode URL Parameter & Standalone Viewer Mode
 
 **Completed:** 2026-01-25
-**PR:** [#7](https://github.com/gvieiracit/flowdash/pull/7)
-**Commit:** [cb3488bf](https://github.com/gvieiracit/flowdash/commit/cb3488bf5be9d65a9d1f5a4f741633c4b4112967)
+**PRs:** [#7](https://github.com/gvieiracit/flowdash/pull/7), [#8](https://github.com/gvieiracit/flowdash/pull/8)
+**Commits:** [cb3488bf](https://github.com/gvieiracit/flowdash/commit/cb3488bf5be9d65a9d1f5a4f741633c4b4112967), [f8a858ac](https://github.com/gvieiracit/flowdash/commit/f8a858ac)
 
 ---
 
@@ -34,6 +34,7 @@ https://gentle-sea-048057803.3.azurestaticapps.net
 - Automatically connects to production database
 - Shows custom branded header
 - Sidebar allows navigation between dashboards (view-only)
+- Logo click is disabled (no access to connection dialog)
 
 ### For Team Members
 Add `?devMode=true` to the URL:
