@@ -10,3 +10,4 @@ If you'd like to continue building dashboards, you have the following options:
 3. If you're in need of a supported version of NeoDash, you can [purchase](https://neo4j.com/docs/neodash-commercial/current/#_getting_access_to_neodash_commercial) a NeoDash commercial license together with a Neo4j Enterprise license.  
 
 
+
