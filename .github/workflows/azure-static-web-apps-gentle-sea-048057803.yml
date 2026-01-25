@@ -21,6 +21,7 @@ jobs:
           lfs: false
       - name: Set production credentials
         run: |
+          sed -i 's/<NEO4J_PROTOCOL>/${{ secrets.NEO4J_PROTOCOL }}/g' public/config.json
           sed -i 's/<NEO4J_HOST>/${{ secrets.NEO4J_HOST }}/g' public/config.json
           sed -i 's/<NEO4J_PORT>/${{ secrets.NEO4J_PORT }}/g' public/config.json
           sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json

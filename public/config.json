@@ -3,7 +3,7 @@
   "ssoProviders": [],
   "ssoDiscoveryUrl": "https://example.com",
   "standalone": true,
-  "standaloneProtocol": "bolt+s",
+  "standaloneProtocol": "<NEO4J_PROTOCOL>",
   "standaloneHost": "<NEO4J_HOST>",
   "standalonePort": "<NEO4J_PORT>",
   "standaloneDatabase": "<NEO4J_DATABASE>",
