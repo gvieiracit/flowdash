@@ -1,8 +1,21 @@
 name: Test Develop
 
 on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '.claude/**'
+      - '*.md'
+      - 'docs/**'
   pull_request:
-    branches: [develop]
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - master
+    paths-ignore:
+      - '.claude/**'
+      - '*.md'
+      - 'docs/**'
 
 jobs:
   build-test:

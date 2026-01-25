@@ -2,7 +2,20 @@ name: Test/Deploy Master
 
 on:
   push:
-    branches: [master]
+    branches:
+      - '**'
+    paths-ignore:
+      - '.claude/**'
+      - '*.md'
+      - 'docs/**'
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - master
+    paths-ignore:
+      - '.claude/**'
+      - '*.md'
+      - 'docs/**'
 
 jobs:
   build-test:
