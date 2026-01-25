@@ -12,7 +12,7 @@
   "standaloneDashboardName": "My Dashboard",
   "standaloneDashboardDatabase": "<NEO4J_DATABASE>",
   "standaloneDashboardURL": "",
-  "standaloneAllowLoad": false,
+  "standaloneAllowLoad": true,
   "standaloneLoadFromOtherDatabases": false,
   "standaloneMultiDatabase": false,
   "standaloneDatabaseList": "<NEO4J_DATABASE>",

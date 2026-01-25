@@ -385,12 +385,74 @@ export const loadDashboardFromNeo4jThunk = (driver, database, uuid, callback) =>
   }
 };
 
+/**
+ * Load the first available dashboard from the database.
+ * Used as a fallback when the configured dashboard name is not found.
+ */
+export const loadFirstAvailableDashboardThunk =
+  (driver, database, callback, onEmpty) => (dispatch: any) => {
+    try {
+      const query =
+        'MATCH (d:_Neodash_Dashboard) RETURN d.content as dashboard ORDER by d.date DESC LIMIT 1';
+      runCypherQuery(
+        driver,
+        database,
+        query,
+        {},
+        1,
+        (status) => {
+          if (status == QueryStatus.NO_DATA) {
+            onEmpty();
+          }
+        },
+        (records) => {
+          if (records.length == 0 || records[0].error) {
+            onEmpty();
+            return;
+          }
+          callback(records[0]._fields[0]);
+        }
+      );
+    } catch (e) {
+      dispatch(createNotificationThunk('Unable to load dashboard from Neo4j', e));
+    }
+  };
+
 export const loadDashboardFromNeo4jByNameThunk =
   (driver, database, name, callback) => (dispatch: any, getState: any) => {
     const loggingState = getState();
     const loggingSettings = applicationGetLoggingSettings(loggingState);
     const loguser = applicationGetConnectionUser(loggingState);
     const neodashMode = applicationIsStandalone(loggingState) ? 'Standalone' : 'Editor';
+    const isStandalone = applicationIsStandalone(loggingState);
+
+    // Fallback handler: load first available dashboard
+    const loadFallbackDashboard = () => {
+      dispatch(
+        loadFirstAvailableDashboardThunk(
+          driver,
+          database,
+          (dashboardContent) => {
+            dispatch(
+              createNotificationThunk(
+                'Loading available dashboard',
+                `Dashboard "${name}" not found. Loading the most recent dashboard instead.`
+              )
+            );
+            callback(dashboardContent);
+          },
+          () => {
+            dispatch(
+              createNotificationThunk(
+                'No dashboards available',
+                'No dashboards were found in the database.'
+              )
+            );
+          }
+        )
+      );
+    };
+
     try {
       const query =
         'MATCH (d:_Neodash_Dashboard) WHERE d.title = $name RETURN d.content as dashboard ORDER by d.date DESC LIMIT 1';
@@ -402,38 +464,48 @@ export const loadDashboardFromNeo4jByNameThunk =
         1,
         (status) => {
           if (status == QueryStatus.NO_DATA) {
-            dispatch(
-              createNotificationThunk(
-                'Unable to load dashboard.',
-                'A dashboard with the provided name could not be found.'
-              )
-            );
+            if (isStandalone) {
+              // In standalone mode, try to load the first available dashboard
+              loadFallbackDashboard();
+            } else {
+              dispatch(
+                createNotificationThunk(
+                  'Unable to load dashboard.',
+                  'A dashboard with the provided name could not be found.'
+                )
+              );
+            }
           }
         },
         (records) => {
           if (records.length == 0) {
-            dispatch(
-              createNotificationThunk(
-                `Unable to load dashboard "${name}".`,
-                'A dashboard with the provided name could not be found.'
-              )
-            );
-            if (loggingSettings.loggingMode > '1') {
+            if (isStandalone) {
+              // In standalone mode, try to load the first available dashboard
+              loadFallbackDashboard();
+            } else {
               dispatch(
-                createLogThunk(
-                  driver,
-                  loggingSettings.loggingDatabase,
-                  neodashMode,
-                  loguser,
-                  'ERR - load dashboard',
-                  database,
-                  `Name:${name}`,
-                  `Error while trying to load dashboard by Name in ${neodashMode} mode at ${Date(Date.now()).substring(
-                    0,
-                    33
-                  )}`
+                createNotificationThunk(
+                  `Unable to load dashboard "${name}".`,
+                  'A dashboard with the provided name could not be found.'
                 )
               );
+              if (loggingSettings.loggingMode > '1') {
+                dispatch(
+                  createLogThunk(
+                    driver,
+                    loggingSettings.loggingDatabase,
+                    neodashMode,
+                    loguser,
+                    'ERR - load dashboard',
+                    database,
+                    `Name:${name}`,
+                    `Error while trying to load dashboard by Name in ${neodashMode} mode at ${Date(Date.now()).substring(
+                      0,
+                      33
+                    )}`
+                  )
+                );
+              }
             }
             return;
           }
