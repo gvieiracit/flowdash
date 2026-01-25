@@ -426,19 +426,14 @@ export const loadDashboardFromNeo4jByNameThunk =
     const neodashMode = applicationIsStandalone(loggingState) ? 'Standalone' : 'Editor';
     const isStandalone = applicationIsStandalone(loggingState);
 
-    // Fallback handler: load first available dashboard
+    // Fallback handler: load first available dashboard (silently, no notification for smooth UX)
     const loadFallbackDashboard = () => {
       dispatch(
         loadFirstAvailableDashboardThunk(
           driver,
           database,
           (dashboardContent) => {
-            dispatch(
-              createNotificationThunk(
-                'Loading available dashboard',
-                `Dashboard "${name}" not found. Loading the most recent dashboard instead.`
-              )
-            );
+            // Silently load the fallback dashboard - no notification needed
             callback(dashboardContent);
           },
           () => {
