@@ -7,7 +7,11 @@ import { REPORT_LOADING_ICON } from '../../../report/Report';
 import debounce from 'lodash/debounce';
 import { RUN_QUERY_DELAY_MS } from '../../../config/ReportConfig';
 import NeoParameterSelectionChart from '../../../chart/parameter/ParameterSelectionChart';
-import { checkParametersNameInGlobalParameter, extractAllParameterNames } from '../../../utils/parameterUtils';
+import {
+  checkParametersNameInGlobalParameter,
+  extractAllParameterNames,
+  checkAtLeastOneParameterDefined,
+} from '../../../utils/parameterUtils';
 
 enum FormStatus {
   DATA_ENTRY = 0, // The user is filling in the form.
@@ -43,12 +47,38 @@ const NeoForm = (props: ChartProps) => {
     });
   }
 
-  const isParametersDefined = (cypherQuery: string | undefined) => {
+  const isSubmitDisabled = (cypherQuery: string | undefined) => {
     const parameterNames = extractAllParameterNames(cypherQuery);
-    if (props.parameters) {
-      return checkParametersNameInGlobalParameter(parameterNames, props.parameters);
+    const submitMode = settings?.submitMode ?? 'all';
+    const formFields = settings?.formFields ?? [];
+
+    if (!props.parameters) {
+      return false;
     }
-    return false;
+
+    switch (submitMode) {
+      case 'atLeastOne':
+        // Enable if at least one parameter has a value
+        return !checkAtLeastOneParameterDefined(parameterNames, props.parameters);
+
+      case 'requiredOnly': {
+        // Only check parameters marked as required
+        const requiredParams = formFields
+          .filter((f: any) => f.settings?.required === true)
+          .map((f: any) => f.settings?.parameterName)
+          .filter(Boolean);
+        // If no fields are marked as required, enable submit
+        if (requiredParams.length === 0) {
+          return false;
+        }
+        return checkParametersNameInGlobalParameter(requiredParams, props.parameters);
+      }
+
+      case 'all':
+      default:
+        // Current behavior - all parameters must have values
+        return checkParametersNameInGlobalParameter(parameterNames, props.parameters);
+    }
   };
 
   useEffect(() => {
@@ -86,7 +116,7 @@ const NeoForm = (props: ChartProps) => {
           <Button
             style={{ marginLeft: 15 }}
             id='form-submit'
-            disabled={!submitButtonActive || isParametersDefined(props.query)}
+            disabled={!submitButtonActive || isSubmitDisabled(props.query)}
             onClick={() => {
               if (!props.query || !props.query.trim()) {
                 props.createNotification(

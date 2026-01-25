@@ -60,6 +60,12 @@ export const FORMS = {
         values: [true, false],
         default: true,
       },
+      submitMode: {
+        label: 'Submit Button Mode',
+        type: SELECTION_TYPES.LIST,
+        values: ['all', 'atLeastOne', 'requiredOnly'],
+        default: 'all',
+      },
       refreshButtonEnabled: {
         label: 'Refreshable',
         type: SELECTION_TYPES.LIST,
