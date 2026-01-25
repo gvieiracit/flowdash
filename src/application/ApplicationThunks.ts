@@ -442,8 +442,10 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     const standalone = !devMode && (config.standalone || urlParams.get('standalone') == 'Yes');
     dispatch(setDevMode(devMode));
 
-    // if a dashboard database was previously set, remember to use it.
-    const dashboardDatabase = state.application.standaloneDashboardDatabase;
+    // In standalone mode, always use config values (not cached state) to ensure correct database
+    const dashboardDatabase = standalone
+      ? config.standaloneDashboardDatabase
+      : state.application.standaloneDashboardDatabase || config.standaloneDashboardDatabase;
     dispatch(
       setStandaloneEnabled(
         standalone,
@@ -452,7 +454,7 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
         config.standalonePort,
         config.standaloneDatabase,
         config.standaloneDashboardName,
-        dashboardDatabase || config.standaloneDashboardDatabase,
+        dashboardDatabase,
         config.standaloneDashboardURL,
         config.standaloneUsername,
         config.standalonePassword,
