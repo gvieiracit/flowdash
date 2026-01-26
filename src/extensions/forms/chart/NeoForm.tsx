@@ -43,6 +43,7 @@ const NeoForm = (props: ChartProps) => {
   const hasSubmitButton = settings?.hasSubmitButton ?? true;
   const hasSubmitMessage = settings?.hasSubmitMessage ?? true;
   const clearParametersAfterSubmit = settings?.clearParametersAfterSubmit ?? true;
+  const compactMode = settings?.compactMode ?? false;
   const [submitButtonActive, setSubmitButtonActive] = React.useState(true);
   const [status, setStatus] = React.useState(FormStatus.DATA_ENTRY);
   const [formResults, setFormResults] = React.useState([]);
@@ -111,17 +112,17 @@ const NeoForm = (props: ChartProps) => {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          padding: '8px 0',
+          padding: compactMode ? '0' : '8px 0',
         }}
       >
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: '4px 8px',
+            gap: compactMode ? '0' : '4px 8px',
             flex: 1,
             alignContent: 'start',
-            padding: '0 8px',
+            padding: compactMode ? '0' : '0 8px',
           }}
         >
           {settings?.formFields?.map((field, index) => (

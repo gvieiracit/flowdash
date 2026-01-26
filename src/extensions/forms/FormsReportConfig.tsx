@@ -66,6 +66,12 @@ export const FORMS = {
         values: ['all', 'atLeastOne', 'requiredOnly'],
         default: 'all',
       },
+      compactMode: {
+        label: 'Compact Mode',
+        type: SELECTION_TYPES.LIST,
+        values: [true, false],
+        default: false,
+      },
       refreshButtonEnabled: {
         label: 'Refreshable',
         type: SELECTION_TYPES.LIST,
