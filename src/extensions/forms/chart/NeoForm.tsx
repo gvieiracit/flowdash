@@ -118,7 +118,7 @@ const NeoForm = (props: ChartProps) => {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: '12px',
+            gap: '4px 8px',
             flex: 1,
             alignContent: 'start',
             padding: '0 8px',

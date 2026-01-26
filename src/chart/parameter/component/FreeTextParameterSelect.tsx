@@ -66,7 +66,6 @@ const FreeTextParameterSelectComponent = (props: ParameterSelectProps) => {
         multiline={props.multiline}
         placeholder={'Enter text here...'}
         style={{
-          marginBottom: '10px',
           marginRight: '10px',
           marginLeft: '15px',
           minWidth: `calc(100% - ${manualParameterSave ? '80' : '30'}px)`,
