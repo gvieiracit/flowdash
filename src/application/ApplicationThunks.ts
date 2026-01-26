@@ -438,7 +438,10 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
 
     // Check if we are in standalone mode
     // devMode=true allows team members to bypass standalone mode and access the connection form
-    const devMode = urlParams.get('devMode') === 'true';
+    // Case-insensitive check: accept devMode, DevMode, DEVMODE, etc.
+    const devMode =
+      urlParams.get('devMode')?.toLowerCase() === 'true' ||
+      urlParams.get('DevMode')?.toLowerCase() === 'true';
     const standalone = !devMode && (config.standalone || urlParams.get('standalone') == 'Yes');
     dispatch(setDevMode(devMode));
 
