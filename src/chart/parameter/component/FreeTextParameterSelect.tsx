@@ -56,7 +56,7 @@ const FreeTextParameterSelectComponent = (props: ParameterSelectProps) => {
   }
 
   return (
-    <div className={'n-flex n-flex-row n-flex-wrap n-items-center'} style={{ width: '100%' }}>
+    <div className={'n-flex n-flex-row n-flex-wrap n-items-center'} style={{ width: '100%', marginTop: '5px' }}>
       <NeoField
         key={'freetext'}
         label={helperText ? helperText : `${label} ${property}`}
@@ -66,7 +66,11 @@ const FreeTextParameterSelectComponent = (props: ParameterSelectProps) => {
         multiline={props.multiline}
         placeholder={'Enter text here...'}
         style={{
-          width: manualParameterSave ? 'calc(100% - 40px)' : '100%',
+          marginBottom: '10px',
+          marginRight: '10px',
+          marginLeft: '15px',
+          minWidth: `calc(100% - ${manualParameterSave ? '80' : '30'}px)`,
+          maxWidth: 'calc(100% - 30px)',
         }}
         disabled={disabled}
         onChange={(newValue) => {
