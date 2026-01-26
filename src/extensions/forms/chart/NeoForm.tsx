@@ -20,6 +20,17 @@ enum FormStatus {
   ERROR = 3, // Submitting the form has failed.
 }
 
+const getGridColumn = (fieldSize?: string): string => {
+  switch (fieldSize) {
+    case 'half':
+      return 'span 3';
+    case 'third':
+      return 'span 2';
+    default:
+      return 'span 6';
+  }
+};
+
 /**
  * Renders a form.
  */
@@ -95,75 +106,94 @@ const NeoForm = (props: ChartProps) => {
 
   if (status == FormStatus.DATA_ENTRY) {
     return (
-      <div>
-        {settings?.formFields?.map((field) => (
-          <div style={{ marginBottom: 10 }}>
-            <NeoParameterSelectionChart
-              records={[{ input: field.query }]}
-              settings={field.settings}
-              parameters={props.parameters}
-              queryCallback={props.queryCallback}
-              updateReportSetting={(key, value) => {
-                // If anyone of the fields is in a loading state (debounce / waiting for input) we disable submission temporarily.
-                if (key == 'typing' && value == true) {
-                  setSubmitButtonActive(false);
-                }
-                if (key == 'typing' && value == undefined) {
-                  setSubmitButtonActive(true);
-                }
-              }}
-              setGlobalParameter={props.setGlobalParameter}
-              getGlobalParameter={props.getGlobalParameter}
-            />
-          </div>
-        ))}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          padding: '8px 0',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, 1fr)',
+            gap: '12px',
+            flex: 1,
+            alignContent: 'start',
+            padding: '0 8px',
+          }}
+        >
+          {settings?.formFields?.map((field, index) => (
+            <div key={index} style={{ gridColumn: getGridColumn(field.settings?.fieldSize) }}>
+              <NeoParameterSelectionChart
+                records={[{ input: field.query }]}
+                settings={field.settings}
+                parameters={props.parameters}
+                queryCallback={props.queryCallback}
+                updateReportSetting={(key, value) => {
+                  // If anyone of the fields is in a loading state (debounce / waiting for input) we disable submission temporarily.
+                  if (key == 'typing' && value == true) {
+                    setSubmitButtonActive(false);
+                  }
+                  if (key == 'typing' && value == undefined) {
+                    setSubmitButtonActive(true);
+                  }
+                }}
+                setGlobalParameter={props.setGlobalParameter}
+                getGlobalParameter={props.getGlobalParameter}
+              />
+            </div>
+          ))}
+        </div>
         {hasSubmitButton ? (
-          <Button
-            style={{ marginLeft: 15 }}
-            id='form-submit'
-            disabled={!submitButtonActive || isSubmitDisabled(props.query)}
-            onClick={() => {
-              if (!props.query || !props.query.trim()) {
-                props.createNotification(
-                  'No query specified',
-                  'There is no query defined to run on submission. Specify one in the report settings.'
-                );
-                return;
-              }
-              setStatus(FormStatus.RUNNING);
-              debouncedRunCypherQuery(props.query, props.parameters, (records) => {
-                setFormResults(records);
-                if (records && records[0] && records[0].error) {
-                  setStatus(FormStatus.ERROR);
-                } else {
-                  forceRefreshDependentReports();
-                  if (clearParametersAfterSubmit) {
-                    const formFields = props?.settings?.formFields;
-                    if (formFields) {
-                      const entries = formFields.map((f) => f.settings);
-                      entries.forEach((entry) => {
-                        if (entry.disabled !== true) {
-                          if (entry.multiSelector) {
-                            props.setGlobalParameter && props.setGlobalParameter(entry.parameterName, []);
-                          } else {
-                            props.setGlobalParameter && props.setGlobalParameter(entry.parameterName, '');
+          <div style={{ marginTop: 'auto', paddingTop: '16px', paddingLeft: '8px' }}>
+            <Button
+              id='form-submit'
+              disabled={!submitButtonActive || isSubmitDisabled(props.query)}
+              onClick={() => {
+                if (!props.query || !props.query.trim()) {
+                  props.createNotification(
+                    'No query specified',
+                    'There is no query defined to run on submission. Specify one in the report settings.'
+                  );
+                  return;
+                }
+                setStatus(FormStatus.RUNNING);
+                debouncedRunCypherQuery(props.query, props.parameters, (records) => {
+                  setFormResults(records);
+                  if (records && records[0] && records[0].error) {
+                    setStatus(FormStatus.ERROR);
+                  } else {
+                    forceRefreshDependentReports();
+                    if (clearParametersAfterSubmit) {
+                      const formFields = props?.settings?.formFields;
+                      if (formFields) {
+                        const entries = formFields.map((f) => f.settings);
+                        entries.forEach((entry) => {
+                          if (entry.disabled !== true) {
+                            if (entry.multiSelector) {
+                              props.setGlobalParameter && props.setGlobalParameter(entry.parameterName, []);
+                            } else {
+                              props.setGlobalParameter && props.setGlobalParameter(entry.parameterName, '');
+                            }
                           }
-                        }
-                      });
+                        });
+                      }
+                    }
+                    if (hasSubmitMessage) {
+                      setStatus(FormStatus.SUBMITTED);
+                    } else {
+                      setStatus(FormStatus.DATA_ENTRY);
                     }
                   }
-                  if (hasSubmitMessage) {
-                    setStatus(FormStatus.SUBMITTED);
-                  } else {
-                    setStatus(FormStatus.DATA_ENTRY);
-                  }
-                }
-              });
-            }}
-          >
-            {buttonText}
-            <PlayIconSolid className='btn-icon-base-r' />
-          </Button>
+                });
+              }}
+            >
+              {buttonText}
+              <PlayIconSolid className='btn-icon-base-r' />
+            </Button>
+          </div>
         ) : (
           <></>
         )}

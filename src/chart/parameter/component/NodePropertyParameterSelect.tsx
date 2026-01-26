@@ -183,10 +183,7 @@ const NodePropertyParameterSelectComponent = (props: ParameterSelectProps) => {
         disabled={disabled}
         limitTags={multiSelectLimit}
         style={{
-          maxWidth: 'calc(100% - 40px)',
-          minWidth: `calc(100% - ${manualParameterSave ? '60' : '30'}px)`,
-          marginLeft: '15px',
-          marginTop: '5px',
+          width: manualParameterSave ? 'calc(100% - 40px)' : '100%',
         }}
         inputValue={inputDisplayText.toString() || ''}
         onInputChange={(event, value) => {

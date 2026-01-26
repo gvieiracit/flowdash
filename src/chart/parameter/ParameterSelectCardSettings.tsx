@@ -221,6 +221,33 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
         style={{ marginTop: '5px' }}
       />
 
+      <Dropdown
+        id='fieldSize'
+        selectProps={{
+          onChange: (newValue) => newValue && onReportSettingUpdate('fieldSize', newValue.value),
+          options: [
+            { label: 'Full Width', value: 'full' },
+            { label: 'Half Width', value: 'half' },
+            { label: 'Third Width', value: 'third' },
+          ],
+          value: {
+            label:
+              settings.fieldSize === 'half'
+                ? 'Half Width'
+                : settings.fieldSize === 'third'
+                ? 'Third Width'
+                : 'Full Width',
+            value: settings.fieldSize || 'full',
+          },
+          menuPlacement: 'bottom',
+          menuPortalTarget: document.querySelector('#overlay'),
+        }}
+        label='Field Width'
+        type='select'
+        fluid
+        style={{ marginTop: '10px' }}
+      />
+
       {settings.type == 'Free Text' || settings.type == 'Date Picker' ? (
         <NeoField
           label={'Name'}
