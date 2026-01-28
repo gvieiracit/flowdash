@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { DataGrid, GridColumnVisibilityModel } from '@mui/x-data-grid';
+import { DataGrid, GridColumnVisibilityModel, GridFilterModel, GridSortModel, GridColDef } from '@mui/x-data-grid';
 import { ChartProps } from '../Chart';
 import {
   evaluateRulesOnDict,
@@ -41,8 +41,23 @@ const getTablePaginationKey = (pagenumber: string | number, cardId: string) =>
 const getColumnVisibilityKey = (pagenumber: string | number, cardId: string) =>
   `${TABLE_COLUMN_VISIBILITY_PREFIX}__${pagenumber}__${cardId}`;
 
+const TABLE_COLUMN_WIDTHS_PREFIX = 'table_column_widths';
+const TABLE_FILTER_MODEL_PREFIX = 'table_filter_model';
+const TABLE_SORT_MODEL_PREFIX = 'table_sort_model';
+
+const getColumnWidthsKey = (pagenumber: string | number, cardId: string) =>
+  `${TABLE_COLUMN_WIDTHS_PREFIX}__${pagenumber}__${cardId}`;
+
+const getFilterModelKey = (pagenumber: string | number, cardId: string) =>
+  `${TABLE_FILTER_MODEL_PREFIX}__${pagenumber}__${cardId}`;
+
+const getSortModelKey = (pagenumber: string | number, cardId: string) =>
+  `${TABLE_SORT_MODEL_PREFIX}__${pagenumber}__${cardId}`;
+
 const parseHiddenColumns = (value: any): string[] => {
-  if (!value || value === '[]') return [];
+  if (!value || value === '[]') {
+    return [];
+  }
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
@@ -112,6 +127,12 @@ const NeoTableChartComponent = (
     setSessionPageSize?: (key: string, value: number) => void;
     sessionColumnVisibility?: GridColumnVisibilityModel;
     setSessionColumnVisibility?: (key: string, value: GridColumnVisibilityModel) => void;
+    sessionColumnWidths?: Record<string, number>;
+    setSessionColumnWidths?: (key: string, value: Record<string, number>) => void;
+    sessionFilterModel?: GridFilterModel;
+    setSessionFilterModel?: (key: string, value: GridFilterModel) => void;
+    sessionSortModel?: GridSortModel;
+    setSessionSortModel?: (key: string, value: GridSortModel) => void;
   }
 ) => {
   const transposed = props.settings && props.settings.transposed ? props.settings.transposed : false;
@@ -155,6 +176,30 @@ const NeoTableChartComponent = (
     return id && pagenumber !== undefined ? getColumnVisibilityKey(pagenumber, id) : null;
   }, [id, pagenumber]);
 
+  const columnWidthsSessionKey = React.useMemo(() => {
+    return id && pagenumber !== undefined ? getColumnWidthsKey(pagenumber, id) : null;
+  }, [id, pagenumber]);
+
+  const filterModelSessionKey = React.useMemo(() => {
+    return id && pagenumber !== undefined ? getFilterModelKey(pagenumber, id) : null;
+  }, [id, pagenumber]);
+
+  const sortModelSessionKey = React.useMemo(() => {
+    return id && pagenumber !== undefined ? getSortModelKey(pagenumber, id) : null;
+  }, [id, pagenumber]);
+
+  // State for filter and sort models
+  const [filterModel, setFilterModel] = React.useState<GridFilterModel>(
+    props.sessionFilterModel || { items: [] }
+  );
+
+  const [sortModel, setSortModel] = React.useState<GridSortModel>(props.sessionSortModel || []);
+
+  // Track user-resized column widths (field -> width mapping)
+  const [userColumnWidths, setUserColumnWidths] = React.useState<Record<string, number>>(
+    props.sessionColumnWidths || {}
+  );
+
   const handlePaginationModelChange = React.useCallback(
     (model: { pageSize: number; page: number }) => {
       setCurrentPageSize(model.pageSize);
@@ -163,6 +208,37 @@ const NeoTableChartComponent = (
       }
     },
     [sessionKey, props.setSessionPageSize]
+  );
+
+  const handleColumnWidthChange = React.useCallback(
+    (params: { colDef: GridColDef; width: number }) => {
+      const newWidths = { ...userColumnWidths, [params.colDef.field]: params.width };
+      setUserColumnWidths(newWidths);
+      if (columnWidthsSessionKey && props.setSessionColumnWidths) {
+        props.setSessionColumnWidths(columnWidthsSessionKey, newWidths);
+      }
+    },
+    [userColumnWidths, columnWidthsSessionKey, props.setSessionColumnWidths]
+  );
+
+  const handleFilterModelChange = React.useCallback(
+    (newFilterModel: GridFilterModel) => {
+      setFilterModel(newFilterModel);
+      if (filterModelSessionKey && props.setSessionFilterModel) {
+        props.setSessionFilterModel(filterModelSessionKey, newFilterModel);
+      }
+    },
+    [filterModelSessionKey, props.setSessionFilterModel]
+  );
+
+  const handleSortModelChange = React.useCallback(
+    (newSortModel: GridSortModel) => {
+      setSortModel(newSortModel);
+      if (sortModelSessionKey && props.setSessionSortModel) {
+        props.setSessionSortModel(sortModelSessionKey, newSortModel);
+      }
+    },
+    [sortModelSessionKey, props.setSessionSortModel]
   );
 
   const useStyles = generateClassDefinitionsBasedOnRules(styleRules);
@@ -190,14 +266,19 @@ const NeoTableChartComponent = (
   const columns = transposed
     ? [records[0].keys[0]].concat(records.map((record) => record._fields[0]?.toString() || '')).map((key, i) => {
         const uniqueKey = `${String(key)}_${i}`;
+        const fieldKey = generateSafeColumnKey(uniqueKey);
+        const userWidth = userColumnWidths[fieldKey];
         return ApplyColumnType(
           {
             key: `col-key-${i}`,
-            field: generateSafeColumnKey(uniqueKey),
+            field: fieldKey,
             headerName: generateSafeColumnKey(key),
             headerClassName: 'table-small-header',
             disableColumnSelector: true,
-            flex: columnWidths && i < columnWidths.length ? columnWidths[i] : 1,
+            // If user has resized, use their width; otherwise use flex
+            ...(userWidth !== undefined
+              ? { width: userWidth }
+              : { flex: columnWidths && i < columnWidths.length ? columnWidths[i] : 1 }),
             disableClickEventBubbling: true,
           },
           key,
@@ -208,15 +289,20 @@ const NeoTableChartComponent = (
       records[0].keys &&
       records[0].keys.map((key, i) => {
         const value = records[0].get(key);
+        const fieldKey = generateSafeColumnKey(key);
+        const userWidth = userColumnWidths[fieldKey];
         if (columnWidthsType == 'Relative (%)') {
           return ApplyColumnType(
             {
               key: `col-key-${i}`,
-              field: generateSafeColumnKey(key),
-              headerName: generateSafeColumnKey(key),
+              field: fieldKey,
+              headerName: fieldKey,
               headerClassName: 'table-small-header',
               disableColumnSelector: true,
-              flex: columnWidths && i < columnWidths.length ? columnWidths[i] : 1,
+              // If user has resized, use their width; otherwise use flex
+              ...(userWidth !== undefined
+                ? { width: userWidth }
+                : { flex: columnWidths && i < columnWidths.length ? columnWidths[i] : 1 }),
               disableClickEventBubbling: true,
             },
             value,
@@ -226,11 +312,12 @@ const NeoTableChartComponent = (
         return ApplyColumnType(
           {
             key: `col-key-${i}`,
-            field: generateSafeColumnKey(key),
-            headerName: generateSafeColumnKey(key),
+            field: fieldKey,
+            headerName: fieldKey,
             headerClassName: 'table-small-header',
             disableColumnSelector: true,
-            width: columnWidths && i < columnWidths.length ? columnWidths[i] : 100,
+            // If user has resized, use their width; otherwise use configured/default width
+            width: userWidth !== undefined ? userWidth : (columnWidths && i < columnWidths.length ? columnWidths[i] : 100),
             disableClickEventBubbling: true,
           },
           value,
@@ -340,6 +427,11 @@ const NeoTableChartComponent = (
     rowSelectionModel: getCheckboxes(actionsRules, rows, props.getGlobalParameter),
     onRowSelectionModelChange: (selection) => updateCheckBoxes(actionsRules, rows, selection, props.setGlobalParameter),
     disableRowSelectionOnClick: true,
+    filterModel: filterModel,
+    onFilterModelChange: handleFilterModelChange,
+    sortModel: sortModel,
+    onSortModelChange: handleSortModelChange,
+    onColumnWidthChange: handleColumnWidthChange,
     components: {
       ColumnSortedDescendingIcon: () => <></>,
       ColumnSortedAscendingIcon: () => <></>,
@@ -446,11 +538,18 @@ const mapStateToProps = (state: any, ownProps: ChartProps) => {
   const { id, pagenumber } = ownProps;
   let sessionPageSize: number | undefined;
   let sessionColumnVisibility: GridColumnVisibilityModel | undefined;
+  let sessionColumnWidths: Record<string, number> | undefined;
+  let sessionFilterModel: GridFilterModel | undefined;
+  let sessionSortModel: GridSortModel | undefined;
+
   if (id && pagenumber !== undefined) {
     sessionPageSize = getSessionStorageValue(state, getTablePaginationKey(pagenumber, id));
     sessionColumnVisibility = getSessionStorageValue(state, getColumnVisibilityKey(pagenumber, id));
+    sessionColumnWidths = getSessionStorageValue(state, getColumnWidthsKey(pagenumber, id));
+    sessionFilterModel = getSessionStorageValue(state, getFilterModelKey(pagenumber, id));
+    sessionSortModel = getSessionStorageValue(state, getSortModelKey(pagenumber, id));
   }
-  return { sessionPageSize, sessionColumnVisibility };
+  return { sessionPageSize, sessionColumnVisibility, sessionColumnWidths, sessionFilterModel, sessionSortModel };
 };
 
 const mapDispatchToProps = (dispatch: any) => ({
@@ -458,6 +557,15 @@ const mapDispatchToProps = (dispatch: any) => ({
     dispatch(setSessionStorageValue(key, value));
   },
   setSessionColumnVisibility: (key: string, value: GridColumnVisibilityModel) => {
+    dispatch(setSessionStorageValue(key, value));
+  },
+  setSessionColumnWidths: (key: string, value: Record<string, number>) => {
+    dispatch(setSessionStorageValue(key, value));
+  },
+  setSessionFilterModel: (key: string, value: GridFilterModel) => {
+    dispatch(setSessionStorageValue(key, value));
+  },
+  setSessionSortModel: (key: string, value: GridSortModel) => {
     dispatch(setSessionStorageValue(key, value));
   },
 });
