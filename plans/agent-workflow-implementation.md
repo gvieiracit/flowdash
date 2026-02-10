@@ -1,6 +1,6 @@
 ---
 name: FlowDash Agent Workflow Extension
-overview: Adicionar uma nova feature (extensão) ao FlowDash para execução de agentes Claude de migração MSTR→Power BI via interface web. Esta extensão permitirá que usuários executem workflows de migração sem precisar de Claude Code local, com interface visual para configuração, execução, revisão e aprovação em cada fase.
+overview: Adicionar uma nova feature (extensão) ao FlowDash para execução de agentes Claude de migração MSTR→Power BI via interface web. Esta extensão permitirá que usuários executem workflows de migração sem precisar de Claude Code local, com interface visual para configuração, execução, revisão e aprovação em cada fase. A ideia é ter um botão menu no header que leva a uma nova tela onde teremos o workflow.
 todos:
   - id: validate-claude-cli
     content: Validar que Claude Code CLI funciona em Alpine Linux container e pode executar comandos /migration:*
@@ -69,7 +69,7 @@ isProject: false
 
 ## Visão Geral
 
-Criar uma **nova extensão** no FlowDash que adiciona funcionalidade de execução de agentes Claude de migração MSTR→Power BI via interface web. Esta feature será adicional às funcionalidades existentes do FlowDash (dashboards Neo4j, visualizações, etc), operando como um módulo independente acessível via menu superior.
+Criar uma **nova funcionalidade** no FlowDash que adiciona capacidade de execução de agentes Claude de migração MSTR→Power BI via interface web. Esta feature será adicional às funcionalidades existentes do FlowDash (dashboards Neo4j, visualizações, etc), operando como um módulo independente acessível via menu superior.
 
 A extensão permitirá que usuários executem workflows de migração sem precisar de Claude Code local, com interface visual step-by-step para configuração, execução, revisão e aprovação em cada fase do processo de migração.
 

@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowDash - Agent Workflow Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-primary: #f8f9fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --bg-dark: #1a1b26;
+  --bg-dark-alt: #24283b;
+  --text-primary: #1a1b2e;
+  --text-secondary: #5c5f77;
+  --text-tertiary: #8b8fa3;
+  --text-inverse: #c0caf5;
+  --border: #e2e4ea;
+  --border-light: #eff0f3;
+  --accent: #4f6bed;
+  --accent-light: #e8ecfd;
+  --accent-dark: #3a52c7;
+  --success: #22a06b;
+  --success-light: #e3fcef;
+  --warning: #e5820b;
+  --warning-light: #fff7e6;
+  --error: #de350b;
+  --error-light: #ffebe6;
+  --info: #0065ff;
+  --info-light: #deebff;
+  --purple: #7c5cfc;
+  --purple-light: #ede7ff;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+  --transition: all 0.2s ease;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-logo {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-logo .material-icons-outlined { font-size: 24px; }
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+.btn-back:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.header-center { font-weight: 600; font-size: 15px; color: var(--text-primary); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.status-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.status-idle { background: var(--bg-tertiary); color: var(--text-tertiary); }
+.status-idle::before { background: var(--text-tertiary); }
+.status-running { background: var(--accent-light); color: var(--accent); }
+.status-running::before { background: var(--accent); animation: pulse 1.5s infinite; }
+.status-paused { background: var(--warning-light); color: var(--warning); }
+.status-paused::before { background: var(--warning); }
+.status-completed { background: var(--success-light); color: var(--success); }
+.status-completed::before { background: var(--success); }
+.status-error { background: var(--error-light); color: var(--error); }
+.status-error::before { background: var(--error); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================================
+   STEPPER
+   ============================================================ */
+.stepper-container {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 40px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.step-item:hover { background: var(--bg-tertiary); }
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: var(--transition);
+}
+.step-sublabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+.step-connector {
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.step-item.active .step-circle {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+.step-item.active .step-label { color: var(--accent); font-weight: 600; }
+.step-item.completed .step-circle {
+  border-color: var(--success);
+  background: var(--success);
+  color: white;
+}
+.step-item.completed .step-label { color: var(--success); }
+.step-connector.completed { background: var(--success); }
+.step-connector.active { background: var(--accent); }
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main-content {
+  flex: 1;
+  padding: 28px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.step-content { display: none; }
+.step-content.active { display: block; }
+
+/* ============================================================
+   CARDS & PANELS
+   ============================================================ */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .material-icons-outlined { font-size: 20px; color: var(--accent); }
+.card-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,107,237,0.12);
+}
+.form-textarea {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 120px;
+}
+.form-input[readonly] {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+.form-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn .material-icons-outlined { font-size: 18px; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:disabled { background: #b0bbd9; cursor: not-allowed; }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #1b8a58; }
+.btn-danger { background: var(--error); color: white; }
+.btn-danger:hover { background: #c42f0a; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.btn-warning { background: var(--warning); color: white; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============================================================
+   REPOSITORY TABLE
+   ============================================================ */
+.repo-table { width: 100%; border-collapse: collapse; }
+.repo-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+}
+.repo-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+.repo-table td:first-child { font-weight: 600; }
+.repo-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.repo-branch-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  width: 140px;
+}
+.repo-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.repo-status.valid { color: var(--success); }
+.repo-status.invalid { color: var(--error); }
+.repo-status .material-icons-outlined { font-size: 16px; }
+
+/* ============================================================
+   EXECUTION CONSOLE
+   ============================================================ */
+.exec-console {
+  background: var(--bg-dark);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  max-height: 350px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-inverse);
+  margin-bottom: 16px;
+}
+.exec-console::-webkit-scrollbar { width: 6px; }
+.exec-console::-webkit-scrollbar-track { background: transparent; }
+.exec-console::-webkit-scrollbar-thumb { background: #414868; border-radius: 3px; }
+.log-line { margin-bottom: 2px; display: flex; gap: 8px; }
+.log-time { color: #565f89; white-space: nowrap; }
+.log-tag { font-weight: 600; white-space: nowrap; }
+.log-tag.info { color: #7aa2f7; }
+.log-tag.agent { color: #bb9af7; }
+.log-tag.tool { color: #9ece6a; }
+.log-tag.mcp { color: #e0af68; }
+.log-tag.error { color: #f7768e; }
+.log-tag.success { color: #73daca; }
+.log-content { color: #c0caf5; word-break: break-word; }
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar-container {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  height: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius: 8px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+.progress-bar.animated::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ============================================================
+   APPROVAL PANEL (SPLIT LAYOUT)
+   ============================================================ */
+.approval-layout { display: flex; gap: 20px; min-height: 400px; }
+.domain-list-panel {
+  width: 260px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.domain-list-header {
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.domain-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 14px;
+}
+.domain-item:hover { background: var(--bg-tertiary); }
+.domain-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.domain-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--success);
+  cursor: pointer;
+}
+.domain-name { flex: 1; font-weight: 500; }
+.domain-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.domain-badge.pending { background: var(--warning-light); color: var(--warning); }
+.domain-badge.approved { background: var(--success-light); color: var(--success); }
+.review-panel {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.review-panel-header {
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.review-panel-title { font-size: 13px; font-weight: 600; }
+.review-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.review-panel-body h1 { font-size: 20px; margin: 16px 0 8px; color: var(--text-primary); }
+.review-panel-body h2 { font-size: 17px; margin: 14px 0 6px; color: var(--text-primary); }
+.review-panel-body h3 { font-size: 15px; margin: 12px 0 4px; color: var(--text-secondary); }
+.review-panel-body p { margin: 8px 0; color: var(--text-secondary); }
+.review-panel-body ul { margin: 8px 0 8px 20px; }
+.review-panel-body li { margin: 4px 0; color: var(--text-secondary); }
+.review-panel-body table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.review-panel-body th { text-align: left; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); font-weight: 600; }
+.review-panel-body td { padding: 8px; border: 1px solid var(--border); }
+.review-panel-body code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.review-panel-body pre {
+  background: var(--bg-dark);
+  color: var(--text-inverse);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin: 12px 0;
+  line-height: 1.6;
+}
+.review-panel-body .approval-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--success-light);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--success);
+  margin-top: 16px;
+}
+.review-panel-body .approval-checkbox input { width: 18px; height: 18px; accent-color: var(--success); }
+
+/* ============================================================
+   MARKDOWN EDITOR
+   ============================================================ */
+.md-editor-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  line-height: 1.6;
+  background: var(--bg-secondary);
+}
+.md-editor-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* ============================================================
+   FILE EXPLORER
+   ============================================================ */
+.file-explorer-layout { display: flex; gap: 0; min-height: 350px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.file-tree-panel {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  padding: 8px 0;
+}
+.file-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.file-tree-item:hover { background: rgba(0,0,0,0.04); }
+.file-tree-item.selected { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.file-tree-item .material-icons-outlined { font-size: 18px; color: var(--text-tertiary); }
+.file-tree-item.selected .material-icons-outlined { color: var(--accent); }
+.file-content-panel {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.file-content-header {
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.file-content-body {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.file-content-body pre {
+  background: var(--bg-dark);
+  color: var(--text-inverse);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* ============================================================
+   SUB-STEP TABS
+   ============================================================ */
+.substep-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-tertiary);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+.substep-tab {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.substep-tab:hover { color: var(--text-primary); }
+.substep-tab.active {
+  background: var(--bg-secondary);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.substep-tab .material-icons-outlined { font-size: 16px; }
+.substep-content { display: none; }
+.substep-content.active { display: block; }
+
+/* ============================================================
+   ALERTS & INFO BOXES
+   ============================================================ */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.alert .material-icons-outlined { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.alert-info { background: var(--info-light); color: var(--info); }
+.alert-success { background: var(--success-light); color: var(--success); }
+.alert-warning { background: var(--warning-light); color: var(--warning); }
+.alert-error { background: var(--error-light); color: var(--error); }
+
+/* ============================================================
+   WORKFLOW SUMMARY
+   ============================================================ */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.summary-card {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+.summary-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+.summary-label { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast .material-icons-outlined { font-size: 18px; }
+.toast-success { background: var(--success); }
+.toast-error { background: var(--error); }
+.toast-info { background: var(--accent); }
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ============================================================
+   MODAL / OVERLAY
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.modal-body { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ============================================================
+   DASHBOARD PLACEHOLDER (INITIAL SCREEN)
+   ============================================================ */
+.dashboard-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1b2e 0%, #2d3561 100%);
+  flex-direction: column;
+  gap: 24px;
+}
+.dashboard-view h1 { color: white; font-size: 36px; font-weight: 700; }
+.dashboard-view p { color: rgba(255,255,255,0.6); font-size: 16px; }
+.btn-enter-workflow {
+  padding: 14px 32px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition);
+}
+.btn-enter-workflow:hover { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,107,237,0.4); }
+.btn-enter-workflow .material-icons-outlined { font-size: 22px; }
+
+/* ============================================================
+   MISC
+   ============================================================ */
+.divider { border: none; border-top: 1px solid var(--border-light); margin: 20px 0; }
+.text-muted { color: var(--text-tertiary); }
+.text-sm { font-size: 13px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.hidden { display: none !important; }
+.flex { display: flex; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+.workflow-view { display: none; flex-direction: column; min-height: 100vh; }
+.workflow-view.active { display: flex; }
+.dashboard-view.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DASHBOARD VIEW (INITIAL SCREEN)
+     ============================================================ -->
+<div id="dashboardView" class="dashboard-view">
+  <div class="header-logo" style="color: white; font-size: 28px;">
+    <span class="material-icons-outlined" style="font-size: 36px;">hub</span>
+    FlowDash
+  </div>
+  <h1>MSTR &rarr; Power BI Migration</h1>
+  <p>Execute AI-powered migration workflows with human validation gates</p>
+  <button class="btn-enter-workflow" onclick="enterWorkflow()">
+    <span class="material-icons-outlined">auto_awesome</span>
+    Open Agent Workflow
+  </button>
+</div>
+
+<!-- ============================================================
+     WORKFLOW VIEW
+     ============================================================ -->
+<div id="workflowView" class="workflow-view">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="exitWorkflow()">
+        <span class="material-icons-outlined" style="font-size:16px">arrow_back</span>
+        Back to Dashboard
+      </button>
+      <div class="header-logo">
+        <span class="material-icons-outlined">auto_awesome</span>
+        Agent Workflow
+      </div>
+    </div>
+    <div class="header-center">MSTR &rarr; Power BI Migration</div>
+    <div class="header-right">
+      <span id="workflowId" class="text-sm text-muted" style="font-family:var(--font-mono)"></span>
+      <span id="statusBadge" class="status-badge status-idle">Idle</span>
+    </div>
+  </div>
+
+  <!-- STEPPER -->
+  <div class="stepper-container">
+    <div class="stepper">
+      <div class="step-item active" data-step="0" onclick="goToStep(0)">
+        <div class="step-circle">1</div>
+        <div><div class="step-label">Setup</div><div class="step-sublabel">Repositories</div></div>
+      </div>
+      <div class="step-connector" data-conn="0"></div>
+      <div class="step-item" data-step="1" onclick="goToStep(1)">
+        <div class="step-circle">2</div>
+        <div><div class="step-label">Data Manager</div><div class="step-sublabel">Scope</div></div>
+      </div>
+      <div class="step-connector" data-conn="1"></div>
+      <div class="step-item" data-step="2" onclick="goToStep(2)">
+        <div class="step-circle">3</div>
+        <div><div class="step-label">Tech Lead</div><div class="step-sublabel">Analysis</div></div>
+      </div>
+      <div class="step-connector" data-conn="2"></div>
+      <div class="step-item" data-step="3" onclick="goToStep(3)">
+        <div class="step-circle">4</div>
+        <div><div class="step-label">Data Engineer</div><div class="step-sublabel">dbt</div></div>
+      </div>
+      <div class="step-connector" data-conn="3"></div>
+      <div class="step-item" data-step="4" onclick="goToStep(4)">
+        <div class="step-circle">5</div>
+        <div><div class="step-label">Data Viz</div><div class="step-sublabel">Semantic</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ========== STEP 1: SETUP ========== -->
+    <div id="step0" class="step-content active">
+      <div class="card">
+        <div class="card-title">
+          <span class="material-icons-outlined">settings</span>
+          Repository Configuration
+        </div>
+        <div class="card-description">
+          Confirm the repositories and branches the agents will work with. These repositories must be accessible within the Docker container volume.
+        </div>
+        <table class="repo-table">
+          <thead>
+            <tr>
+              <th>Repository</th>
+              <th>Path</th>
+              <th>Branch</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="repoTableBody"></tbody>
+        </table>
+        <hr class="divider">
+        <div class="btn-group">
+          <button class="btn btn-outline" onclick="validateRepos()">
+            <span class="material-icons-outlined">verified</span> Validate Repositories
+          </button>
+          <button id="setupContinueBtn" class="btn btn-primary" disabled onclick="completeStep(0)">
+            <span class="material-icons-outlined">arrow_forward</span> Continue to Data Manager
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 2: DATA MANAGER ========== -->
+    <div id="step1" class="step-content">
+      <div class="card">
+        <div class="card-title">
+          <span class="material-icons-outlined">inventory_2</span>
+          Data Manager &mdash; Scope Review
+        </div>
+        <div class="card-description">
+          Paste a list of MicroStrategy metric/attribute GUIDs or names. The Data Manager agent will search the MCP server, group items by domain, and create scope-review documents for your approval.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Metrics &amp; Attributes</label>
+          <textarea id="itemsInput" class="form-textarea" placeholder="E.g.:&#10;8D679D4211D3E4981000E787EC6DE8A4&#10;Revenue Amount GBP&#10;4B7FCC0E4CAF9B51BFB085A8A2C5E87C&#10;Product Name&#10;Customer Segment">8D679D4211D3E4981000E787EC6DE8A4
+Revenue Amount GBP
+4B7FCC0E4CAF9B51BFB085A8A2C5E87C
+Product Name
+Customer Segment
+Net Sales Amount
+Gross Margin Percentage
+Order Count</textarea>
+          <div class="form-hint">One item per line. Accepts GUIDs (8+ characters) or display names.</div>
+        </div>
+        <div class="btn-group">
+          <button id="runInitBtn" class="btn btn-primary" onclick="executeStep1()">
+            <span class="material-icons-outlined">play_arrow</span> Execute Data Manager Agent
+          </button>
+        </div>
+      </div>
+
+      <div id="step1Console" class="hidden">
+        <div class="card">
+          <div class="card-title">
+            <span class="material-icons-outlined">terminal</span>
+            Execution Output
+          </div>
+          <div class="progress-bar-container">
+            <div id="step1Progress" class="progress-bar animated" style="width:0%"></div>
+          </div>
+          <div id="step1Logs" class="exec-console"></div>
+        </div>
+      </div>
+
+      <div id="step1Approval" class="hidden">
+        <div class="card">
+          <div class="card-title">
+            <span class="material-icons-outlined">fact_check</span>
+            Domain Approval &mdash; Scope Review
+          </div>
+          <div class="alert alert-info">
+            <span class="material-icons-outlined">info</span>
+            Review each domain's scope-review document. You can edit the markdown, then check the approval box. All domains must be approved to proceed.
+          </div>
+          <div id="step1ApprovalPanel" class="approval-layout"></div>
+          <hr class="divider">
+          <div class="btn-group">
+            <button id="step1ApproveBtn" class="btn btn-success" disabled onclick="completeStep(1)">
+              <span class="material-icons-outlined">check_circle</span> Approve All &amp; Continue
+            </button>
+            <button class="btn btn-warning" onclick="showReexecuteModal(1)">
+              <span class="material-icons-outlined">refresh</span> Request Re-execution
+            </button>
+            <button class="btn btn-outline" onclick="downloadStepArtifacts(1)">
+              <span class="material-icons-outlined">download</span> Download Artifacts
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 3: TECH LEAD ========== -->
+    <div id="step2" class="step-content">
+      <div class="card">
+        <div class="card-title">
+          <span class="material-icons-outlined">architecture</span>
+          Tech Lead &mdash; Lineage Analysis
+        </div>
+        <div class="card-description">
+          The Tech Lead agent traces data lineage via the MCP server, classifies tables as Fact/Dimension, discovers existing dbt models, and maps columns between MSTR and dbt.
+        </div>
+        <div id="step2DomainSummary" class="summary-grid"></div>
+        <div class="btn-group">
+          <button id="runAnalyseBtn" class="btn btn-primary" onclick="executeStep2()">
+            <span class="material-icons-outlined">play_arrow</span> Execute Tech Lead Agent
+          </button>
+        </div>
+      </div>
+
+      <div id="step2Console" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="material-icons-outlined">terminal</span> Execution Output</div>
+          <div class="progress-bar-container"><div id="step2Progress" class="progress-bar animated" style="width:0%"></div></div>
+          <div id="step2Logs" class="exec-console"></div>
+        </div>
+      </div>
+
+      <div id="step2Approval" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="material-icons-outlined">fact_check</span> Domain Approval &mdash; Analysis Review</div>
+          <div class="alert alert-info">
+            <span class="material-icons-outlined">info</span>
+            Review lineage analysis, table classifications, and dbt model mappings per domain.
+          </div>
+          <div id="step2ApprovalPanel" class="approval-layout"></div>
+          <hr class="divider">
+          <div class="btn-group">
+            <button id="step2ApproveBtn" class="btn btn-success" disabled onclick="completeStep(2)">
+              <span class="material-icons-outlined">check_circle</span> Approve All &amp; Continue
+            </button>
+            <button class="btn btn-warning" onclick="showReexecuteModal(2)">
+              <span class="material-icons-outlined">refresh</span> Request Re-execution
+            </button>
+            <button class="btn btn-outline" onclick="downloadStepArtifacts(2)">
+              <span class="material-icons-outlined">download</span> Download Artifacts
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 4: DATA ENGINEER ========== -->
+    <div id="step3" class="step-content">
+      <div class="card">
+        <div class="card-title">
+          <span class="material-icons-outlined">engineering</span>
+          Data Engineer &mdash; dbt Models
+        </div>
+        <div class="card-description">
+          Two-phase process: First, the agent discovers existing dbt models and generates specifications. After approval, it applies changes to the dbt repository.
+        </div>
+
+        <div class="substep-tabs">
+          <div class="substep-tab active" data-substep="3-0" onclick="switchSubstep('3','0')">
+            <span class="material-icons-outlined">search</span> Discovery
+          </div>
+          <div class="substep-tab" data-substep="3-1" onclick="switchSubstep('3','1')">
+            <span class="material-icons-outlined">build</span> Apply dbt
+          </div>
+        </div>
+
+        <!-- Sub-step 0: Discovery -->
+        <div id="substep3-0" class="substep-content active">
+          <div class="btn-group mb-4">
+            <button id="runDiscoverBtn" class="btn btn-primary" onclick="executeStep3Sub0()">
+              <span class="material-icons-outlined">play_arrow</span> Run Discovery
+            </button>
+          </div>
+          <div id="step3Sub0Console" class="hidden">
+            <div class="progress-bar-container"><div id="step3Sub0Progress" class="progress-bar animated" style="width:0%"></div></div>
+            <div id="step3Sub0Logs" class="exec-console"></div>
+          </div>
+          <div id="step3Sub0Approval" class="hidden mt-4">
+            <div class="alert alert-info">
+              <span class="material-icons-outlined">info</span>
+              Review dbt-spec-review per domain. Check SQL specifications, YAML contracts, and test configurations.
+            </div>
+            <div id="step3Sub0ApprovalPanel" class="approval-layout"></div>
+            <hr class="divider">
+            <div class="btn-group">
+              <button id="step3Sub0ApproveBtn" class="btn btn-success" disabled onclick="approveSubstep('3','0')">
+                <span class="material-icons-outlined">check_circle</span> Approve Specs
+              </button>
+              <button class="btn btn-warning" onclick="showReexecuteModal(3)">
+                <span class="material-icons-outlined">refresh</span> Re-execute Discovery
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-step 1: Apply -->
+        <div id="substep3-1" class="substep-content">
+          <div class="alert alert-warning" id="step3ApplyLock">
+            <span class="material-icons-outlined">lock</span>
+            Approve the discovery specifications first before applying dbt changes.
+          </div>
+          <div id="step3ApplyContent" class="hidden">
+            <div class="btn-group mb-4">
+              <button id="runApplyDbtBtn" class="btn btn-primary" onclick="executeStep3Sub1()">
+                <span class="material-icons-outlined">play_arrow</span> Apply dbt Changes
+              </button>
+            </div>
+            <div id="step3Sub1Console" class="hidden">
+              <div class="progress-bar-container"><div id="step3Sub1Progress" class="progress-bar animated" style="width:0%"></div></div>
+              <div id="step3Sub1Logs" class="exec-console"></div>
+            </div>
+            <div id="step3FileExplorer" class="hidden mt-4">
+              <div class="card-title mb-2"><span class="material-icons-outlined">folder_open</span> Generated dbt Files</div>
+              <div id="step3Files" class="file-explorer-layout"></div>
+              <hr class="divider">
+              <div class="btn-group">
+                <button class="btn btn-success" onclick="completeStep(3)">
+                  <span class="material-icons-outlined">arrow_forward</span> Continue to Data Viz
+                </button>
+                <button class="btn btn-outline" onclick="downloadStepArtifacts(3)">
+                  <span class="material-icons-outlined">download</span> Download All Files
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 5: DATA VIZ ========== -->
+    <div id="step4" class="step-content">
+      <div class="card">
+        <div class="card-title">
+          <span class="material-icons-outlined">dashboard_customize</span>
+          Data Viz &mdash; Semantic Model
+        </div>
+        <div class="card-description">
+          Two-phase process: First, generate the semantic model specification (table mappings, DAX measures). After approval, apply the semantic model to the Power BI repository.
+        </div>
+
+        <div class="substep-tabs">
+          <div class="substep-tab active" data-substep="4-0" onclick="switchSubstep('4','0')">
+            <span class="material-icons-outlined">description</span> Semantic Spec
+          </div>
+          <div class="substep-tab" data-substep="4-1" onclick="switchSubstep('4','1')">
+            <span class="material-icons-outlined">build</span> Apply Semantic
+          </div>
+        </div>
+
+        <!-- Sub-step 0: Semantic Spec -->
+        <div id="substep4-0" class="substep-content active">
+          <div class="form-group">
+            <label class="form-label">dbt PR URL (optional)</label>
+            <input type="text" class="form-input" placeholder="https://github.com/asosteam/asos-data-ade-dbt/pull/123" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Branch to analyse</label>
+            <input type="text" class="form-input" value="main" style="width:200px">
+          </div>
+          <div class="btn-group mb-4">
+            <button id="runSemanticSpecBtn" class="btn btn-primary" onclick="executeStep4Sub0()">
+              <span class="material-icons-outlined">play_arrow</span> Generate Semantic Spec
+            </button>
+          </div>
+          <div id="step4Sub0Console" class="hidden">
+            <div class="progress-bar-container"><div id="step4Sub0Progress" class="progress-bar animated" style="width:0%"></div></div>
+            <div id="step4Sub0Logs" class="exec-console"></div>
+          </div>
+          <div id="step4Sub0Approval" class="hidden mt-4">
+            <div class="alert alert-info">
+              <span class="material-icons-outlined">info</span>
+              Review semantic-spec-review per domain. Verify DAX measures, table mappings, and relationships.
+            </div>
+            <div id="step4Sub0ApprovalPanel" class="approval-layout"></div>
+            <hr class="divider">
+            <div class="btn-group">
+              <button id="step4Sub0ApproveBtn" class="btn btn-success" disabled onclick="approveSubstep('4','0')">
+                <span class="material-icons-outlined">check_circle</span> Approve Specs
+              </button>
+              <button class="btn btn-warning" onclick="showReexecuteModal(4)">
+                <span class="material-icons-outlined">refresh</span> Re-execute Spec
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-step 1: Apply Semantic -->
+        <div id="substep4-1" class="substep-content">
+          <div class="alert alert-warning" id="step4ApplyLock">
+            <span class="material-icons-outlined">lock</span>
+            Approve the semantic specification first before applying.
+          </div>
+          <div id="step4ApplyContent" class="hidden">
+            <div class="btn-group mb-4">
+              <button id="runSemanticApplyBtn" class="btn btn-primary" onclick="executeStep4Sub1()">
+                <span class="material-icons-outlined">play_arrow</span> Apply Semantic Model
+              </button>
+            </div>
+            <div id="step4Sub1Console" class="hidden">
+              <div class="progress-bar-container"><div id="step4Sub1Progress" class="progress-bar animated" style="width:0%"></div></div>
+              <div id="step4Sub1Logs" class="exec-console"></div>
+            </div>
+            <div id="step4FileExplorer" class="hidden mt-4">
+              <div class="card-title mb-2"><span class="material-icons-outlined">folder_open</span> Generated Semantic Model Files</div>
+              <div id="step4Files" class="file-explorer-layout"></div>
+              <hr class="divider">
+              <div class="btn-group">
+                <button class="btn btn-success" onclick="completeWorkflow()">
+                  <span class="material-icons-outlined">celebration</span> Complete Workflow
+                </button>
+                <button class="btn btn-outline" onclick="downloadStepArtifacts(4)">
+                  <span class="material-icons-outlined">download</span> Download All Files
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /workflow-view -->
+
+<!-- ============================================================
+     REEXECUTE MODAL
+     ============================================================ -->
+<div id="reexecuteModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Request Re-execution</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Adjustment notes for the agent</label>
+        <textarea class="form-textarea" rows="4" placeholder="Describe what needs to change...&#10;E.g.: 'The sales domain should include Net Revenue metric'"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="reexecute()">
+        <span class="material-icons-outlined">refresh</span> Re-execute with Adjustments
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     WORKFLOW COMPLETE MODAL
+     ============================================================ -->
+<div id="completeModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--success);display:flex;align-items:center;gap:8px">
+      <span class="material-icons-outlined">celebration</span> Workflow Complete!
+    </div>
+    <div class="modal-body">
+      <p>All 5 phases of the MSTR &rarr; Power BI migration have been completed successfully.</p>
+      <div class="summary-grid mt-4">
+        <div class="summary-card"><div class="summary-value">3</div><div class="summary-label">Domains</div></div>
+        <div class="summary-card"><div class="summary-value">8</div><div class="summary-label">Items Migrated</div></div>
+        <div class="summary-card"><div class="summary-value">12</div><div class="summary-label">Files Generated</div></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn btn-success" onclick="downloadStepArtifacts('all'); closeModal();">
+        <span class="material-icons-outlined">download</span> Download All Artifacts
+      </button>
+      <button class="btn btn-primary" onclick="resetWorkflow()">
+        <span class="material-icons-outlined">add</span> Start New Workflow
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  currentStep: 0,
+  completedSteps: new Set(),
+  status: 'idle',
+  workflowId: null,
+  domains: [],
+  approvals: {},
+  substepApprovals: {},
+  editing: {},
+};
+
+// ============================================================
+// MOCK DATA
+// ============================================================
+const REPOS = {
+  dbt: { path: '/app/volumes/repos/asos-data-ade-dbt-main', branch: 'main' },
+  powerbi: { path: '/app/volumes/repos/asos-data-ade-powerbi-main', branch: 'main' },
+  contracts: { path: '/app/volumes/repos/asos-data-ade-processingzone-contracts-main', branch: 'main' },
+  infrastructure: { path: '/app/volumes/repos/asos-data-ade-processingzone-infrastructure-main', branch: 'main' },
+  orchestration: { path: '/app/volumes/repos/asos-data-ade-processingzone-orchestration-main', branch: 'main' },
+  processing: { path: '/app/volumes/repos/asos-data-ade-processingzone-processing-main', branch: 'main' },
+  ads: { path: '/app/volumes/repos/asos-dataservices-ads', branch: 'main' },
+  edw: { path: '/app/volumes/repos/asos-dataservices-edw', branch: 'main' },
+};
+
+const MOCK_DOMAINS = ['sales', 'product', 'customer'];
+
+const SCOPE_REVIEWS = {
+  sales: `# Scope Review — sales
+
+## Workflow Metadata
+- **Workflow ID:** 20260207_153042
+- **Domain:** sales
+- **Created:** 2026-02-07 15:30:42 UTC
+- **Created By:** Data Manager Agent
+
+## Items Summary
+
+| # | Item | Type | GUID | Status |
+|---|------|------|------|--------|
+| 1 | Revenue Amount GBP | Metric | 8D679D4211D3E4981000E787EC6DE8A4 | ✅ Found |
+| 2 | Net Sales Amount | Metric | — | ✅ Found (by name) |
+| 3 | Gross Margin Percentage | Metric | — | ✅ Found (by name) |
+| 4 | Order Count | Metric | — | ✅ Found (by name) |
+
+## Domain Assignment Reasoning
+
+**Confidence:** High
+
+These metrics relate to sales transactions and revenue analysis. The Revenue Amount, Net Sales, Gross Margin, and Order Count are all core sales domain KPIs used across ASOS commercial reporting.
+
+## Source Tables Identified
+
+| Table | Type | Schema |
+|-------|------|--------|
+| F_SALES_ORDER_LINE | Fact | dw_sales |
+| F_SALES_ORDER_HEADER | Fact | dw_sales |
+| D_PRODUCT | Dimension | dw_product |
+| D_CUSTOMER | Dimension | dw_customer |
+| D_DATE | Dimension | dw_common |
+
+## Attribute Details
+
+| Attribute | Forms | Source Column |
+|-----------|-------|--------------|
+| Order ID | ID, DESC | order_id, order_desc |
+| Product SKU | ID | product_sku |
+
+---
+
+- [x] **APPROVED FOR NEXT PHASE**
+- Reviewer: ___
+- Date: ___`,
+
+  product: `# Scope Review — product
+
+## Workflow Metadata
+- **Workflow ID:** 20260207_153042
+- **Domain:** product
+- **Created:** 2026-02-07 15:30:42 UTC
+- **Created By:** Data Manager Agent
+
+## Items Summary
+
+| # | Item | Type | GUID | Status |
+|---|------|------|------|--------|
+| 1 | Product Name | Attribute | 4B7FCC0E4CAF9B51BFB085A8A2C5E87C | ✅ Found |
+
+## Domain Assignment Reasoning
+
+**Confidence:** High
+
+Product Name is a core product domain attribute. Used in product catalogue and cross-domain reporting.
+
+## Source Tables Identified
+
+| Table | Type | Schema |
+|-------|------|--------|
+| D_PRODUCT | Dimension | dw_product |
+| D_PRODUCT_CATEGORY | Dimension | dw_product |
+
+## Attribute Details
+
+| Attribute | Forms | Source Column |
+|-----------|-------|--------------|
+| Product Name | ID, DESC, LONG_DESC | product_name, product_desc, product_long_desc |
+| Category | ID, DESC | category_id, category_name |
+
+---
+
+- [ ] **APPROVED FOR NEXT PHASE**
+- Reviewer: ___
+- Date: ___`,
+
+  customer: `# Scope Review — customer
+
+## Workflow Metadata
+- **Workflow ID:** 20260207_153042
+- **Domain:** customer
+- **Created:** 2026-02-07 15:30:42 UTC
+- **Created By:** Data Manager Agent
+
+## Items Summary
+
+| # | Item | Type | GUID | Status |
+|---|------|------|------|--------|
+| 1 | Customer Segment | Attribute | — | ✅ Found (by name) |
+
+## Domain Assignment Reasoning
+
+**Confidence:** High
+
+Customer Segment is a core customer domain attribute used in customer segmentation, marketing analysis, and CRM reporting.
+
+## Source Tables Identified
+
+| Table | Type | Schema |
+|-------|------|--------|
+| D_CUSTOMER | Dimension | dw_customer |
+| D_CUSTOMER_SEGMENT | Dimension | dw_customer |
+
+## Attribute Details
+
+| Attribute | Forms | Source Column |
+|-----------|-------|--------------|
+| Customer Segment | ID, DESC | segment_id, segment_name |
+| Customer Tier | ID, DESC | tier_id, tier_name |
+
+---
+
+- [ ] **APPROVED FOR NEXT PHASE**
+- Reviewer: ___
+- Date: ___`,
+};
+
+const ANALYSIS_REVIEWS = {
+  sales: `# Analysis Review — sales
+
+## Workflow Metadata
+- **Domain:** sales
+- **Created By:** Tech Lead Agent
+
+## Metric Analysis
+
+### Revenue Amount GBP
+- **MSTR Formula:** \`Sum(REVENUE_AMOUNT_GBP){~+}\`
+- **Source Tables:** F_SALES_ORDER_LINE
+- **Source Column:** revenue_amount_gbp
+- **Dependencies:** D_DATE (date_sk), D_PRODUCT (product_sk)
+
+### Net Sales Amount
+- **MSTR Formula:** \`Sum(NET_SALES_AMOUNT){~+}\`
+- **Source Tables:** F_SALES_ORDER_LINE
+- **Source Column:** net_sales_amount
+
+### Gross Margin Percentage
+- **MSTR Formula:** \`(Sum(NET_SALES_AMOUNT) - Sum(COST_AMOUNT)) / Sum(NET_SALES_AMOUNT)\`
+- **Source Tables:** F_SALES_ORDER_LINE
+- **Source Columns:** net_sales_amount, cost_amount
+
+### Order Count
+- **MSTR Formula:** \`Count(DISTINCT ORDER_ID){~+}\`
+- **Source Tables:** F_SALES_ORDER_HEADER
+- **Source Column:** order_id
+
+## Table Classification
+
+| Table | Classification | Confidence | Reasoning |
+|-------|---------------|------------|-----------|
+| F_SALES_ORDER_LINE | Fact | High | Prefix F_, contains measures, grain=order line |
+| F_SALES_ORDER_HEADER | Fact | High | Prefix F_, contains order-level data |
+| D_PRODUCT | Dimension | High | Prefix D_, contains descriptive attributes |
+| D_CUSTOMER | Dimension | High | Prefix D_, customer master data |
+| D_DATE | Dimension | High | Prefix D_, standard date dimension |
+
+## dbt Model Discovery
+
+| MSTR Table | dbt Model Found | Path | Status |
+|-----------|----------------|------|--------|
+| F_SALES_ORDER_LINE | fact_sales_order_line_v1 | models/sales/serve/ | ✅ Exists |
+| F_SALES_ORDER_HEADER | fact_sales_order_header_v1 | models/sales/serve/ | ✅ Exists |
+| D_PRODUCT | dim_product_v1 | models/product/serve/ | ✅ Exists |
+| D_DATE | dim_date_v1 | models/common/serve/ | ✅ Exists |
+
+## Column Mapping (MSTR → dbt)
+
+| MSTR Column | dbt Column | dbt Model | Status |
+|-------------|-----------|-----------|--------|
+| REVENUE_AMOUNT_GBP | revenue_amount_gbp | fact_sales_order_line_v1 | ✅ Mapped |
+| NET_SALES_AMOUNT | net_sales_amount | fact_sales_order_line_v1 | ✅ Mapped |
+| COST_AMOUNT | cost_amount | fact_sales_order_line_v1 | ⚠️ Needs validation |
+| ORDER_ID | order_id | fact_sales_order_header_v1 | ✅ Mapped |
+
+## Self-Consistency Check
+
+| Check | Result |
+|-------|--------|
+| All metrics have source tables | ✅ 4/4 |
+| All tables have classification | ✅ 5/5 |
+| All MSTR columns have dbt mapping | ⚠️ 3/4 (1 needs validation) |
+
+---
+
+- [ ] **APPROVED FOR DATA ENGINEER**`,
+
+  product: `# Analysis Review — product
+
+## Workflow Metadata
+- **Domain:** product
+- **Created By:** Tech Lead Agent
+
+## Attribute Analysis
+
+### Product Name
+- **Source Tables:** D_PRODUCT
+- **Source Column:** product_name
+- **Forms:** ID (product_id), DESC (product_name), LONG_DESC (product_long_desc)
+
+## dbt Model Discovery
+
+| MSTR Table | dbt Model | Status |
+|-----------|-----------|--------|
+| D_PRODUCT | dim_product_v1 | ✅ Exists |
+| D_PRODUCT_CATEGORY | dim_product_category_v1 | ✅ Exists |
+
+---
+
+- [ ] **APPROVED FOR DATA ENGINEER**`,
+
+  customer: `# Analysis Review — customer
+
+## Workflow Metadata
+- **Domain:** customer
+- **Created By:** Tech Lead Agent
+
+## Attribute Analysis
+
+### Customer Segment
+- **Source Tables:** D_CUSTOMER_SEGMENT
+- **Source Column:** segment_name
+- **Forms:** ID (segment_id), DESC (segment_name)
+
+## dbt Model Discovery
+
+| MSTR Table | dbt Model | Status |
+|-----------|-----------|--------|
+| D_CUSTOMER | dim_customer_v1 | ✅ Exists |
+| D_CUSTOMER_SEGMENT | dim_customer_segment_v1 | ⚠️ Not found — needs creation |
+
+### 🟡 Gap Alert
+\`dim_customer_segment_v1\` does not exist in dbt. Recommended action: Create new model in \`models/customer/serve/\`.
+
+---
+
+- [ ] **APPROVED FOR DATA ENGINEER**`,
+};
+
+const DBT_SPEC_REVIEWS = {
+  sales: `# dbt Spec Review — sales\n\n## Discovery — Tables Overview\n\n| Table | dbt Model | Status | Action |\n|-------|-----------|--------|--------|\n| F_SALES_ORDER_LINE | fact_sales_order_line_v1 | ✅ | Extend (add cost_amount) |\n| F_SALES_ORDER_HEADER | fact_sales_order_header_v1 | ✅ | No changes |\n\n## Files to Modify\n\n### fact_sales_order_line_v1.sql\n\`\`\`sql\n-- Add column: cost_amount\nSELECT\n  ...,\n  cost_amount\nFROM {{ ref('stg_sales_order_line') }}\n\`\`\`\n\n## Data Quality Tests\n\n| Test | Column | Type |\n|------|--------|------|\n| not_null | order_line_sk | Tier 1 |\n| unique | order_line_sk | Tier 1 |\n| relationships | dim_product_sk | Tier 1 |\n| accepted_range | revenue_amount_gbp >= 0 | Tier 2 |\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+  product: `# dbt Spec Review — product\n\n## Discovery — Tables Overview\n\n| Table | dbt Model | Status |\n|-------|-----------|--------|\n| D_PRODUCT | dim_product_v1 | ✅ No changes needed |\n\n## Self-Consistency Check\n✅ All items accounted for.\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+  customer: `# dbt Spec Review — customer\n\n## Discovery — Tables Overview\n\n| Table | dbt Model | Status | Action |\n|-------|-----------|--------|--------|\n| D_CUSTOMER_SEGMENT | dim_customer_segment_v1 | 🔴 | Create new model |\n\n## Files to Create\n\n### dim_customer_segment_v1.sql\n\`\`\`sql\nWITH source AS (\n  SELECT * FROM {{ ref('stg_customer_segment') }}\n)\nSELECT\n  dim_customer_segment_sk,\n  segment_id,\n  segment_name,\n  segment_description,\n  created_at,\n  updated_at\nFROM source\n\`\`\`\n\n### dim_customer_segment_v1.yml\n\`\`\`yaml\nmodels:\n  - name: dim_customer_segment_v1\n    description: Customer segmentation dimension\n    columns:\n      - name: dim_customer_segment_sk\n        tests: [not_null, unique]\n\`\`\`\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+};
+
+const SEMANTIC_SPEC_REVIEWS = {
+  sales: `# Semantic Spec Review — sales\n\n## Data Source\n- **Branch:** main\n- **Tables extracted from dbt code:**\n  - fact_sales_order_line_v1 → "Sales Order Line"\n  - fact_sales_order_header_v1 → "Sales Order Header"\n  - dim_product_v1 → "Product"\n  - dim_date_v1 → "Date"\n\n## MSTR → Power BI Mapping\n\n| MSTR Metric | Business Logic | DAX Measure |\n|-------------|---------------|-------------|\n| Revenue Amount GBP | Total revenue in GBP | \`Total Revenue = SUM('Sales Order Line'[Revenue Amount Gbp])\` |\n| Net Sales Amount | Net sales after returns | \`Net Sales = SUM('Sales Order Line'[Net Sales Amount])\` |\n| Gross Margin % | (Net Sales - Cost) / Net Sales | \`Gross Margin % = DIVIDE(SUM('Sales Order Line'[Net Sales Amount]) - SUM('Sales Order Line'[Cost Amount]), SUM('Sales Order Line'[Net Sales Amount]), 0)\` |\n| Order Count | Distinct order count | \`Order Count = DISTINCTCOUNT('Sales Order Header'[Order Id])\` |\n\n## Relationships\n\n| From | To | Key |\n|------|----|-----|\n| Sales Order Line.dim_product_sk | Product.dim_product_sk | Many-to-One |\n| Sales Order Line.dim_date_sk | Date.dim_date_sk | Many-to-One |\n\n## BPA Pre-Analysis\n✅ All naming conventions: Proper Case\n✅ No floating point data types\n✅ All FK columns hidden\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+  product: `# Semantic Spec Review — product\n\n## Tables\n- dim_product_v1 → "Product"\n\n## Columns\n| dbt Column | Display Name | Data Type | Hidden |\n|-----------|-------------|-----------|--------|\n| dim_product_sk | Dim Product Sk | String | Yes |\n| product_id | Product Id | String | No |\n| product_name | Product Name | String | No |\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+  customer: `# Semantic Spec Review — customer\n\n## Tables\n- dim_customer_segment_v1 → "Customer Segment"\n\n## Columns\n| dbt Column | Display Name | Data Type | Hidden |\n|-----------|-------------|-----------|--------|\n| dim_customer_segment_sk | Dim Customer Segment Sk | String | Yes |\n| segment_id | Segment Id | String | No |\n| segment_name | Segment Name | String | No |\n\n---\n\n- [ ] **APPROVED TO APPLY CHANGES**`,
+};
+
+const MOCK_DBT_FILES = {
+  'migration-plan/20260207_153042/': {
+    type: 'dir', children: {
+      '03-data-engineering/': { type: 'dir', children: {
+        'sales/': { type: 'dir', children: {
+          'dbt-spec-review.md': { type: 'file', content: DBT_SPEC_REVIEWS.sales },
+          'execution-report.md': { type: 'file', content: '# Execution Report — sales\n\n## Changes Applied\n- Modified: `models/sales/serve/fact_sales_order_line_v1.sql` (+1 column)\n- Modified: `models/sales/serve/_contracts/fact_sales_order_line_v1.yml` (+1 column)\n\n## Verification\n- ✅ SQL syntax valid\n- ✅ YAML syntax valid\n- ✅ dbt parse: success\n\n## Git\n- Branch: `feature/migration-20260207_153042`\n- Commit: `abc1234`\n- Files changed: 2' },
+        }},
+        'customer/': { type: 'dir', children: {
+          'dbt-spec-review.md': { type: 'file', content: DBT_SPEC_REVIEWS.customer },
+          'execution-report.md': { type: 'file', content: '# Execution Report — customer\n\n## Changes Applied\n- Created: `models/customer/serve/dim_customer_segment_v1.sql`\n- Created: `models/customer/serve/_contracts/dim_customer_segment_v1.yml`\n- Created: `models/customer/serve/_docs/dim_customer_segment_v1.md`\n\n## Verification\n- ✅ SQL syntax valid\n- ✅ YAML syntax valid\n\n## Git\n- Branch: `feature/migration-20260207_153042`\n- Files changed: 3' },
+        }},
+        'pr-info.md': { type: 'file', content: '# PR Information\n\n**Title:** feat(migration): add sales cost_amount + customer segment dimension\n\n**Branch:** `feature/migration-20260207_153042`\n\n**Description:**\nMigration workflow 20260207_153042 — dbt changes for sales and customer domains.\n\n## Changes\n- sales: Added cost_amount column to fact_sales_order_line_v1\n- customer: Created dim_customer_segment_v1 model' },
+      }},
+    },
+  },
+};
+
+const MOCK_SEMANTIC_FILES = {
+  'migration-plan/20260207_153042/': {
+    type: 'dir', children: {
+      '04-semantic-model/': { type: 'dir', children: {
+        'sales/': { type: 'dir', children: {
+          'semantic-spec-review.md': { type: 'file', content: SEMANTIC_SPEC_REVIEWS.sales },
+          'execution-report.md': { type: 'file', content: '# Execution Report — sales\n\n## Model: Sales Analytics\n\n## Commands Executed\n1. extract-metadata: ✅\n2. generate-model: ✅\n3. map-relationships: ✅\n4. generate-measures: ✅\n5. validate-bpa: ✅ (0 errors, 0 warnings)\n\n## Files Created: 14\n- database.json\n- cultures/en-GB.json\n- expressions/ (4 files)\n- tables/ (4 tables, 12 columns)\n- relationships/ (2 files)\n- measures/ (4 measures)' },
+          'models/': { type: 'dir', children: {
+            'SalesAnalytics/': { type: 'dir', children: {
+              'database.json': { type: 'file', content: '{\n  "name": "Sales Analytics",\n  "compatibilityLevel": 1560,\n  "model": {\n    "culture": "en-GB",\n    "defaultPowerBIDataSourceVersion": "powerBI_V3"\n  }\n}' },
+              'tables/': { type: 'dir', children: {
+                'SalesOrderLine.json': { type: 'file', content: '{\n  "name": "Sales Order Line",\n  "columns": [\n    {"name": "Revenue Amount Gbp", "dataType": "decimal", "summarizeBy": "none"},\n    {"name": "Net Sales Amount", "dataType": "decimal", "summarizeBy": "none"},\n    {"name": "Cost Amount", "dataType": "decimal", "summarizeBy": "none"},\n    {"name": "Dim Product Sk", "dataType": "string", "isHidden": true}\n  ]\n}' },
+              }},
+              'measures/': { type: 'dir', children: {
+                'TotalRevenue.json': { type: 'file', content: '{\n  "name": "Total Revenue",\n  "expression": "SUM(\'Sales Order Line\'[Revenue Amount Gbp])",\n  "formatString": "£#,##0.00;-£#,##0.00",\n  "description": "Adapted from MSTR Revenue Amount GBP. Simple SUM aggregation."\n}' },
+                'GrossMargin.json': { type: 'file', content: '{\n  "name": "Gross Margin %",\n  "expression": "DIVIDE(\\n  SUM(\'Sales Order Line\'[Net Sales Amount]) - SUM(\'Sales Order Line\'[Cost Amount]),\\n  SUM(\'Sales Order Line\'[Net Sales Amount]),\\n  0\\n)",\n  "formatString": "0.00%",\n  "description": "Adapted from MSTR Gross Margin Percentage. Uses DIVIDE for safe division."\n}' },
+              }},
+            }},
+          }},
+        }},
+      }},
+    },
+  },
+};
+
+// ============================================================
+// MOCK LOG SEQUENCES
+// ============================================================
+function getInitLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Data Manager agent — /migration:init' },
+    { delay: 600, tag: 'agent', content: 'Reading input items... 8 items detected.' },
+    { delay: 1200, tag: 'mcp', content: 'POST search-metrics query="8D679D4211D3E4981000E787EC6DE8A4" → 1 result' },
+    { delay: 1800, tag: 'mcp', content: 'POST search-metrics query="Revenue Amount GBP" → 1 result' },
+    { delay: 2200, tag: 'mcp', content: 'POST search-metrics query="Net Sales Amount" → 1 result' },
+    { delay: 2600, tag: 'mcp', content: 'POST search-metrics query="Gross Margin Percentage" → 1 result' },
+    { delay: 3000, tag: 'mcp', content: 'POST search-metrics query="Order Count" → 1 result' },
+    { delay: 3400, tag: 'mcp', content: 'POST search-attributes query="4B7FCC0E4CAF9B51BFB085A8A2C5E87C" → 1 result' },
+    { delay: 3800, tag: 'mcp', content: 'POST search-attributes query="Product Name" → 1 result' },
+    { delay: 4200, tag: 'mcp', content: 'POST search-attributes query="Customer Segment" → 1 result' },
+    { delay: 4800, tag: 'agent', content: 'Grouping items by domain...' },
+    { delay: 5400, tag: 'agent', content: 'Domain: sales — 4 metrics (Revenue Amount GBP, Net Sales Amount, Gross Margin %, Order Count)' },
+    { delay: 5800, tag: 'agent', content: 'Domain: product — 1 attribute (Product Name)' },
+    { delay: 6200, tag: 'agent', content: 'Domain: customer — 1 attribute (Customer Segment)' },
+    { delay: 6800, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/01-scope/sales/scope-review.md' },
+    { delay: 7200, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/01-scope/product/scope-review.md' },
+    { delay: 7600, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/01-scope/customer/scope-review.md' },
+    { delay: 8000, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/workflow-status.md' },
+    { delay: 8500, tag: 'success', content: '✓ Data Manager complete — 3 domains, 8 items processed.' },
+  ];
+}
+
+function getAnalyseLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Tech Lead agent — /migration:analyse' },
+    { delay: 800, tag: 'agent', content: 'Loading approved scope-reviews for 3 domains...' },
+    { delay: 1400, tag: 'agent', content: 'Processing domain: sales (4 metrics)' },
+    { delay: 2000, tag: 'mcp', content: 'POST trace-metric guid="8D679D4211D3E4981000E787EC6DE8A4" direction="downstream" → lineage found' },
+    { delay: 2600, tag: 'mcp', content: 'POST trace-metric guid="..." (Net Sales Amount) direction="downstream" → lineage found' },
+    { delay: 3200, tag: 'tool', content: 'Glob: asos-data-ade-dbt-main/bundles/core_data/models/sales/serve/*.sql → 12 files' },
+    { delay: 3800, tag: 'agent', content: 'Found dbt model: fact_sales_order_line_v1 — mapping columns...' },
+    { delay: 4400, tag: 'agent', content: 'Processing domain: product (1 attribute)' },
+    { delay: 5000, tag: 'mcp', content: 'POST trace-attribute guid="4B7FCC0E4CAF9B51BFB085A8A2C5E87C" direction="downstream" → lineage found' },
+    { delay: 5600, tag: 'agent', content: 'Processing domain: customer (1 attribute)' },
+    { delay: 6200, tag: 'mcp', content: 'POST trace-attribute query="Customer Segment" direction="downstream" → lineage found' },
+    { delay: 6800, tag: 'agent', content: '⚠️ Gap: dim_customer_segment_v1 not found in dbt — flagging for Data Engineer' },
+    { delay: 7400, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/02-analysis/sales/analysis-review.md' },
+    { delay: 7800, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/02-analysis/product/analysis-review.md' },
+    { delay: 8200, tag: 'tool', content: 'Writing: migration-plan/20260207_153042/02-analysis/customer/analysis-review.md' },
+    { delay: 8800, tag: 'success', content: '✓ Tech Lead analysis complete — 3 domains analysed.' },
+  ];
+}
+
+function getDiscoverLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Data Engineer agent — /migration:discover' },
+    { delay: 800, tag: 'agent', content: 'Loading analysis-reviews for 3 domains...' },
+    { delay: 1200, tag: 'tool', content: 'Discovering dbt repo at /app/volumes/repos/asos-data-ade-dbt-main' },
+    { delay: 1800, tag: 'agent', content: 'sales: Scanning existing models in models/sales/serve/' },
+    { delay: 2400, tag: 'agent', content: 'sales: fact_sales_order_line_v1 — needs column addition (cost_amount)' },
+    { delay: 3000, tag: 'agent', content: 'sales: DRY Assessment — extend existing model (low risk)' },
+    { delay: 3600, tag: 'agent', content: 'customer: dim_customer_segment_v1 — new model required' },
+    { delay: 4200, tag: 'agent', content: 'customer: Generating SQL, YAML, and MD specifications...' },
+    { delay: 4800, tag: 'agent', content: 'product: dim_product_v1 — no changes required' },
+    { delay: 5400, tag: 'tool', content: 'Writing: 03-data-engineering/sales/dbt-spec-review.md' },
+    { delay: 5800, tag: 'tool', content: 'Writing: 03-data-engineering/product/dbt-spec-review.md' },
+    { delay: 6200, tag: 'tool', content: 'Writing: 03-data-engineering/customer/dbt-spec-review.md' },
+    { delay: 6800, tag: 'success', content: '✓ Discovery complete — 1 model to modify, 1 model to create.' },
+  ];
+}
+
+function getApplyDbtLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Data Engineer agent — /migration:apply-dbt' },
+    { delay: 800, tag: 'agent', content: 'Cross-validating specification consistency...' },
+    { delay: 1200, tag: 'agent', content: '✓ All specs consistent — proceeding with apply' },
+    { delay: 1800, tag: 'tool', content: 'Git: creating branch feature/migration-20260207_153042' },
+    { delay: 2400, tag: 'tool', content: 'Modifying: models/sales/serve/fact_sales_order_line_v1.sql (+1 column)' },
+    { delay: 3000, tag: 'tool', content: 'Modifying: models/sales/serve/_contracts/fact_sales_order_line_v1.yml' },
+    { delay: 3600, tag: 'tool', content: 'Creating: models/customer/serve/dim_customer_segment_v1.sql' },
+    { delay: 4200, tag: 'tool', content: 'Creating: models/customer/serve/_contracts/dim_customer_segment_v1.yml' },
+    { delay: 4800, tag: 'tool', content: 'Creating: models/customer/serve/_docs/dim_customer_segment_v1.md' },
+    { delay: 5400, tag: 'agent', content: 'Running dbt parse... ✅ success' },
+    { delay: 6000, tag: 'agent', content: 'DQ Self-Check: ✅ All Tier 1 tests present' },
+    { delay: 6600, tag: 'tool', content: 'Git: committing 5 files to feature/migration-20260207_153042' },
+    { delay: 7200, tag: 'tool', content: 'Writing: 03-data-engineering/pr-info.md' },
+    { delay: 7800, tag: 'success', content: '✓ dbt changes applied — 2 modified, 3 created. Ready for PR.' },
+  ];
+}
+
+function getSemanticSpecLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Data Viz agent — /migration:semantic-spec' },
+    { delay: 800, tag: 'agent', content: 'Analysing dbt code on branch main...' },
+    { delay: 1400, tag: 'tool', content: 'Reading: fact_sales_order_line_v1.sql → extracting columns' },
+    { delay: 2000, tag: 'tool', content: 'Reading: fact_sales_order_line_v1.yml → extracting data types' },
+    { delay: 2600, tag: 'agent', content: 'Loading MSTR formulae from analysis-review.md...' },
+    { delay: 3200, tag: 'agent', content: 'Adapting DAX measures from MSTR formulae (NOT direct copy)' },
+    { delay: 3800, tag: 'agent', content: 'Total Revenue = SUM(\'Sales Order Line\'[Revenue Amount Gbp])' },
+    { delay: 4400, tag: 'agent', content: 'Gross Margin % = DIVIDE(SUM(Net Sales) - SUM(Cost), SUM(Net Sales), 0)' },
+    { delay: 5000, tag: 'tool', content: 'Loading BPA rules from asos-data-ade-powerbi-main/powerbi/bestpracticeanalyser/' },
+    { delay: 5600, tag: 'agent', content: 'BPA Pre-Analysis: ✅ All rules pass' },
+    { delay: 6200, tag: 'tool', content: 'Writing: 04-semantic-model/sales/semantic-spec-review.md' },
+    { delay: 6600, tag: 'tool', content: 'Writing: 04-semantic-model/product/semantic-spec-review.md' },
+    { delay: 7000, tag: 'tool', content: 'Writing: 04-semantic-model/customer/semantic-spec-review.md' },
+    { delay: 7600, tag: 'success', content: '✓ Semantic spec complete — 4 DAX measures, 2 relationships planned.' },
+  ];
+}
+
+function getSemanticApplyLogs() {
+  return [
+    { delay: 300, tag: 'info', content: 'Starting Data Viz agent — /migration:semantic-apply' },
+    { delay: 800, tag: 'agent', content: 'Cross-validating semantic specification...' },
+    { delay: 1200, tag: 'agent', content: '✓ All specs consistent' },
+    { delay: 1800, tag: 'tool', content: 'Executing: /migration:extract-metadata domain=sales' },
+    { delay: 2400, tag: 'tool', content: 'Executing: /migration:generate-model domain=sales model_name="Sales Analytics"' },
+    { delay: 3000, tag: 'tool', content: 'Created: database.json, cultures/en-GB.json' },
+    { delay: 3600, tag: 'tool', content: 'Created: expressions/ (4 Databricks connection files)' },
+    { delay: 4200, tag: 'tool', content: 'Created: tables/SalesOrderLine/ (table + 4 columns + partition)' },
+    { delay: 4800, tag: 'tool', content: 'Executing: /migration:map-relationships → 2 relationships created' },
+    { delay: 5400, tag: 'tool', content: 'Executing: /migration:generate-measures → 4 DAX measures created' },
+    { delay: 6000, tag: 'agent', content: 'Running BPA validation (post mode)...' },
+    { delay: 6600, tag: 'agent', content: 'BPA: ✅ 0 errors, 0 warnings, 8 rules passed' },
+    { delay: 7200, tag: 'tool', content: 'Copying files to asos-data-ade-powerbi-main/powerbi/models/sales/SalesAnalytics/' },
+    { delay: 7800, tag: 'tool', content: 'Writing: 04-semantic-model/sales/execution-report.md' },
+    { delay: 8400, tag: 'success', content: '✓ Semantic model applied — 14 files created. Workflow complete!' },
+  ];
+}
+
+// ============================================================
+// CORE FUNCTIONS
+// ============================================================
+function enterWorkflow() {
+  document.getElementById('dashboardView').classList.add('hidden');
+  document.getElementById('workflowView').classList.add('active');
+  state.workflowId = '20260207_' + String(Math.floor(Math.random()*900000)+100000);
+  document.getElementById('workflowId').textContent = state.workflowId;
+  renderRepoTable();
+}
+
+function exitWorkflow() {
+  document.getElementById('workflowView').classList.remove('active');
+  document.getElementById('dashboardView').classList.remove('hidden');
+}
+
+function setStatus(status) {
+  state.status = status;
+  const badge = document.getElementById('statusBadge');
+  badge.className = 'status-badge status-' + status;
+  badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const icons = { success: 'check_circle', error: 'error', info: 'info' };
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="material-icons-outlined">${icons[type]}</span> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// ============================================================
+// STEP NAVIGATION
+// ============================================================
+function goToStep(stepIndex) {
+  if (stepIndex > 0 && !state.completedSteps.has(stepIndex - 1) && stepIndex > state.currentStep) return;
+  state.currentStep = stepIndex;
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('step' + stepIndex).classList.add('active');
+  updateStepper();
+}
+
+function updateStepper() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    const step = parseInt(el.dataset.step);
+    el.classList.remove('active', 'completed');
+    if (step === state.currentStep) el.classList.add('active');
+    else if (state.completedSteps.has(step)) el.classList.add('completed');
+  });
+  document.querySelectorAll('.step-connector').forEach(el => {
+    const conn = parseInt(el.dataset.conn);
+    el.classList.remove('completed', 'active');
+    if (state.completedSteps.has(conn)) el.classList.add('completed');
+    else if (conn === state.currentStep) el.classList.add('active');
+  });
+}
+
+function completeStep(stepIndex) {
+  state.completedSteps.add(stepIndex);
+  setStatus('idle');
+  showToast(`Step ${stepIndex + 1} completed!`, 'success');
+  goToStep(stepIndex + 1);
+  if (stepIndex === 1) renderStep2Summary();
+}
+
+// ============================================================
+// STEP 1: SETUP
+// ============================================================
+function renderRepoTable() {
+  const tbody = document.getElementById('repoTableBody');
+  tbody.innerHTML = '';
+  Object.entries(REPOS).forEach(([key, repo]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${key}</td>
+      <td><span class="repo-path">${repo.path}</span></td>
+      <td><input type="text" class="repo-branch-input" value="${repo.branch}" data-repo="${key}"></td>
+      <td><span id="repoStatus_${key}" class="repo-status"></span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function validateRepos() {
+  setStatus('running');
+  let i = 0;
+  const keys = Object.keys(REPOS);
+  const interval = setInterval(() => {
+    if (i >= keys.length) {
+      clearInterval(interval);
+      setStatus('idle');
+      document.getElementById('setupContinueBtn').disabled = false;
+      showToast('All repositories validated successfully', 'success');
+      return;
+    }
+    const el = document.getElementById('repoStatus_' + keys[i]);
+    el.innerHTML = '<span class="material-icons-outlined">check_circle</span> Valid';
+    el.className = 'repo-status valid';
+    i++;
+  }, 200);
+}
+
+// ============================================================
+// MOCK EXECUTION ENGINE
+// ============================================================
+function simulateExecution(logs, consoleId, progressId, onComplete) {
+  setStatus('running');
+  const consoleEl = document.getElementById(consoleId);
+  const progressEl = document.getElementById(progressId);
+  consoleEl.innerHTML = '';
+  const totalDuration = logs[logs.length - 1].delay;
+
+  logs.forEach((log, idx) => {
+    setTimeout(() => {
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="log-time">[${time}]</span><span class="log-tag ${log.tag}">[${log.tag.toUpperCase()}]</span><span class="log-content">${log.content}</span>`;
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      const pct = Math.round(((idx + 1) / logs.length) * 100);
+      progressEl.style.width = pct + '%';
+      if (idx === logs.length - 1) {
+        progressEl.classList.remove('animated');
+        setTimeout(onComplete, 300);
+      }
+    }, log.delay);
+  });
+}
+
+// ============================================================
+// APPROVAL PANEL BUILDER
+// ============================================================
+function buildApprovalPanel(containerId, reviews, stepKey) {
+  const container = document.getElementById(containerId);
+  state.approvals[stepKey] = {};
+  MOCK_DOMAINS.forEach(d => state.approvals[stepKey][d] = false);
+
+  const domainPanel = document.createElement('div');
+  domainPanel.className = 'domain-list-panel';
+  domainPanel.innerHTML = `<div class="domain-list-header">Domains (${MOCK_DOMAINS.length})</div>`;
+  MOCK_DOMAINS.forEach((domain, idx) => {
+    const item = document.createElement('div');
+    item.className = 'domain-item' + (idx === 0 ? ' selected' : '');
+    item.id = `domainItem_${stepKey}_${domain}`;
+    item.innerHTML = `
+      <input type="checkbox" id="chk_${stepKey}_${domain}" onchange="toggleApproval('${stepKey}','${domain}',this.checked)">
+      <span class="domain-name">${domain}</span>
+      <span class="domain-badge pending" id="badge_${stepKey}_${domain}">Pending</span>`;
+    item.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      domainPanel.querySelectorAll('.domain-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      showReview(stepKey, domain, reviews);
+    });
+    domainPanel.appendChild(item);
+  });
+
+  const reviewPanel = document.createElement('div');
+  reviewPanel.className = 'review-panel';
+  reviewPanel.id = `reviewPanel_${stepKey}`;
+  reviewPanel.innerHTML = `
+    <div class="review-panel-header">
+      <span class="review-panel-title" id="reviewTitle_${stepKey}">${MOCK_DOMAINS[0]} — Review</span>
+      <div class="btn-group">
+        <button class="btn btn-sm btn-outline" onclick="toggleEditMode('${stepKey}')">
+          <span class="material-icons-outlined" style="font-size:14px">edit</span> Edit
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="downloadFile('${stepKey}')">
+          <span class="material-icons-outlined" style="font-size:14px">download</span> Download
+        </button>
+      </div>
+    </div>
+    <div class="review-panel-body" id="reviewBody_${stepKey}"></div>`;
+
+  container.innerHTML = '';
+  container.appendChild(domainPanel);
+  container.appendChild(reviewPanel);
+  showReview(stepKey, MOCK_DOMAINS[0], reviews);
+}
+
+function showReview(stepKey, domain, reviews) {
+  const title = document.getElementById(`reviewTitle_${stepKey}`);
+  const body = document.getElementById(`reviewBody_${stepKey}`);
+  title.textContent = `${domain} — Review`;
+  state.editing[stepKey] = { domain, raw: reviews[domain] };
+  body.innerHTML = simpleMarkdownToHtml(reviews[domain]);
+}
+
+function toggleEditMode(stepKey) {
+  const body = document.getElementById(`reviewBody_${stepKey}`);
+  const data = state.editing[stepKey];
+  if (body.querySelector('textarea')) {
+    const ta = body.querySelector('textarea');
+    data.raw = ta.value;
+    body.innerHTML = simpleMarkdownToHtml(data.raw);
+    showToast('Changes saved', 'success');
+  } else {
+    body.innerHTML = `<textarea class="md-editor-textarea">${data.raw}</textarea>`;
+  }
+}
+
+function toggleApproval(stepKey, domain, checked) {
+  state.approvals[stepKey][domain] = checked;
+  const badge = document.getElementById(`badge_${stepKey}_${domain}`);
+  badge.className = 'domain-badge ' + (checked ? 'approved' : 'pending');
+  badge.textContent = checked ? 'Approved' : 'Pending';
+
+  const allApproved = MOCK_DOMAINS.every(d => state.approvals[stepKey][d]);
+  const approveBtn = document.querySelector(`#${stepKey}ApproveBtn, #${stepKey.replace(/Sub\d/,'')}ApproveBtn`);
+  // Find the right button
+  const btnId = stepKey.includes('Sub') ? `step${stepKey.charAt(4)}Sub${stepKey.charAt(stepKey.length-1)}ApproveBtn` : `step${parseInt(stepKey.replace('step',''))}ApproveBtn`;
+  const btn = document.getElementById(btnId);
+  if (btn) btn.disabled = !allApproved;
+}
+
+// ============================================================
+// STEP 2: DATA MANAGER
+// ============================================================
+function executeStep1() {
+  document.getElementById('runInitBtn').disabled = true;
+  document.getElementById('step1Console').classList.remove('hidden');
+  simulateExecution(getInitLogs(), 'step1Logs', 'step1Progress', () => {
+    setStatus('paused');
+    state.domains = [...MOCK_DOMAINS];
+    document.getElementById('step1Approval').classList.remove('hidden');
+    buildApprovalPanel('step1ApprovalPanel', SCOPE_REVIEWS, 'step1');
+    showToast('Scope review ready for approval', 'info');
+  });
+}
+
+// ============================================================
+// STEP 3: TECH LEAD
+// ============================================================
+function renderStep2Summary() {
+  const grid = document.getElementById('step2DomainSummary');
+  grid.innerHTML = `
+    <div class="summary-card"><div class="summary-value">3</div><div class="summary-label">Domains</div></div>
+    <div class="summary-card"><div class="summary-value">4</div><div class="summary-label">Metrics</div></div>
+    <div class="summary-card"><div class="summary-value">2</div><div class="summary-label">Attributes</div></div>
+    <div class="summary-card"><div class="summary-value">8</div><div class="summary-label">Total Items</div></div>`;
+}
+
+function executeStep2() {
+  document.getElementById('runAnalyseBtn').disabled = true;
+  document.getElementById('step2Console').classList.remove('hidden');
+  simulateExecution(getAnalyseLogs(), 'step2Logs', 'step2Progress', () => {
+    setStatus('paused');
+    document.getElementById('step2Approval').classList.remove('hidden');
+    buildApprovalPanel('step2ApprovalPanel', ANALYSIS_REVIEWS, 'step2');
+    showToast('Analysis review ready for approval', 'info');
+  });
+}
+
+// ============================================================
+// STEP 4: DATA ENGINEER
+// ============================================================
+function switchSubstep(step, sub) {
+  document.querySelectorAll(`[data-substep^="${step}-"]`).forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-substep="${step}-${sub}"]`).classList.add('active');
+  document.querySelectorAll(`#step${step == '3' ? '3' : '4'} .substep-content`).forEach(c => c.classList.remove('active'));
+  document.getElementById(`substep${step}-${sub}`).classList.add('active');
+}
+
+function executeStep3Sub0() {
+  document.getElementById('runDiscoverBtn').disabled = true;
+  document.getElementById('step3Sub0Console').classList.remove('hidden');
+  simulateExecution(getDiscoverLogs(), 'step3Sub0Logs', 'step3Sub0Progress', () => {
+    setStatus('paused');
+    document.getElementById('step3Sub0Approval').classList.remove('hidden');
+    buildApprovalPanel('step3Sub0ApprovalPanel', DBT_SPEC_REVIEWS, 'step3Sub0');
+    showToast('dbt spec review ready for approval', 'info');
+  });
+}
+
+function approveSubstep(step, sub) {
+  state.substepApprovals[`${step}-${sub}`] = true;
+  showToast('Specifications approved!', 'success');
+  if (step === '3') {
+    document.getElementById('step3ApplyLock').classList.add('hidden');
+    document.getElementById('step3ApplyContent').classList.remove('hidden');
+    switchSubstep('3', '1');
+  } else if (step === '4') {
+    document.getElementById('step4ApplyLock').classList.add('hidden');
+    document.getElementById('step4ApplyContent').classList.remove('hidden');
+    switchSubstep('4', '1');
+  }
+}
+
+function executeStep3Sub1() {
+  document.getElementById('runApplyDbtBtn').disabled = true;
+  document.getElementById('step3Sub1Console').classList.remove('hidden');
+  simulateExecution(getApplyDbtLogs(), 'step3Sub1Logs', 'step3Sub1Progress', () => {
+    setStatus('paused');
+    document.getElementById('step3FileExplorer').classList.remove('hidden');
+    buildFileExplorer('step3Files', MOCK_DBT_FILES);
+    showToast('dbt changes applied successfully', 'success');
+  });
+}
+
+// ============================================================
+// STEP 5: DATA VIZ
+// ============================================================
+function executeStep4Sub0() {
+  document.getElementById('runSemanticSpecBtn').disabled = true;
+  document.getElementById('step4Sub0Console').classList.remove('hidden');
+  simulateExecution(getSemanticSpecLogs(), 'step4Sub0Logs', 'step4Sub0Progress', () => {
+    setStatus('paused');
+    document.getElementById('step4Sub0Approval').classList.remove('hidden');
+    buildApprovalPanel('step4Sub0ApprovalPanel', SEMANTIC_SPEC_REVIEWS, 'step4Sub0');
+    showToast('Semantic spec ready for approval', 'info');
+  });
+}
+
+function executeStep4Sub1() {
+  document.getElementById('runSemanticApplyBtn').disabled = true;
+  document.getElementById('step4Sub1Console').classList.remove('hidden');
+  simulateExecution(getSemanticApplyLogs(), 'step4Sub1Logs', 'step4Sub1Progress', () => {
+    setStatus('completed');
+    document.getElementById('step4FileExplorer').classList.remove('hidden');
+    buildFileExplorer('step4Files', MOCK_SEMANTIC_FILES);
+    showToast('Semantic model applied!', 'success');
+  });
+}
+
+function completeWorkflow() {
+  setStatus('completed');
+  document.getElementById('completeModal').classList.add('active');
+}
+
+function resetWorkflow() {
+  location.reload();
+}
+
+// ============================================================
+// FILE EXPLORER
+// ============================================================
+function buildFileExplorer(containerId, fileData) {
+  const container = document.getElementById(containerId);
+  const treePanel = document.createElement('div');
+  treePanel.className = 'file-tree-panel';
+  const contentPanel = document.createElement('div');
+  contentPanel.className = 'file-content-panel';
+  contentPanel.innerHTML = `
+    <div class="file-content-header"><span id="filePathDisplay_${containerId}">Select a file</span></div>
+    <div class="file-content-body" id="fileContentBody_${containerId}">
+      <div style="text-align:center;padding:40px;color:var(--text-tertiary)">
+        <span class="material-icons-outlined" style="font-size:40px;display:block;margin-bottom:8px">description</span>
+        Select a file from the tree to view its contents
+      </div>
+    </div>`;
+
+  function renderTree(data, panel, depth = 0) {
+    Object.entries(data).forEach(([name, node]) => {
+      const item = document.createElement('div');
+      item.className = 'file-tree-item';
+      item.style.paddingLeft = (12 + depth * 16) + 'px';
+      const icon = node.type === 'dir' ? 'folder' : (name.endsWith('.md') ? 'description' : (name.endsWith('.json') ? 'data_object' : 'code'));
+      item.innerHTML = `<span class="material-icons-outlined">${icon}</span>${name}`;
+      if (node.type === 'file') {
+        item.addEventListener('click', () => {
+          panel.querySelectorAll('.file-tree-item').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+          document.getElementById(`filePathDisplay_${containerId}`).textContent = name;
+          const body = document.getElementById(`fileContentBody_${containerId}`);
+          if (name.endsWith('.md')) {
+            body.innerHTML = simpleMarkdownToHtml(node.content);
+          } else {
+            body.innerHTML = `<pre>${escapeHtml(node.content)}</pre>`;
+          }
+        });
+      }
+      panel.appendChild(item);
+      if (node.type === 'dir' && node.children) {
+        renderTree(node.children, panel, depth + 1);
+      }
+    });
+  }
+
+  renderTree(fileData, treePanel);
+  container.innerHTML = '';
+  container.appendChild(treePanel);
+  container.appendChild(contentPanel);
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function showReexecuteModal(step) {
+  document.getElementById('reexecuteModal').classList.add('active');
+}
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+}
+function reexecute() {
+  closeModal();
+  showToast('Re-execution queued with adjustments', 'info');
+}
+function downloadStepArtifacts(step) {
+  showToast('Download started (mock) — all artifacts zipped', 'info');
+}
+function downloadFile(stepKey) {
+  showToast('File download started (mock)', 'info');
+}
+
+// ============================================================
+// SIMPLE MARKDOWN → HTML
+// ============================================================
+function simpleMarkdownToHtml(md) {
+  if (!md) return '<p style="color:var(--text-tertiary)">No content available</p>';
+  let html = escapeHtml(md);
+  // Code blocks
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>');
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Tables
+  html = html.replace(/^\|(.+)\|$/gm, (match) => {
+    const cells = match.split('|').filter(c => c.trim() !== '');
+    if (cells.every(c => /^[\s\-:]+$/.test(c))) return '';
+    const tag = 'td';
+    return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
+  });
+  html = html.replace(/(<tr>[\s\S]*?<\/tr>)/g, (match) => {
+    if (!match.includes('<table>')) return match;
+    return match;
+  });
+  // Wrap consecutive <tr> in <table>
+  html = html.replace(/((?:<tr>.*?<\/tr>\s*)+)/g, '<table>$1</table>');
+  // First row of table should be th
+  html = html.replace(/<table><tr>(.*?)<\/tr>/g, (match, cells) => {
+    const ths = cells.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+    return `<table><thead><tr>${ths}</tr></thead>`;
+  });
+  // Lists
+  html = html.replace(/^- \[x\] (.+)$/gm, '<div class="approval-checkbox"><input type="checkbox" checked disabled> $1</div>');
+  html = html.replace(/^- \[ \] (.+)$/gm, '<div class="approval-checkbox"><input type="checkbox" disabled> $1</div>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>.*?<\/li>\s*)+)/g, '<ul>$1</ul>');
+  // Horizontal rules
+  html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">');
+  // Paragraphs (simple: wrap lines not already tagged)
+  html = html.replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
+  // Clean empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  return html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ============================================================
+// KEYBOARD SHORTCUT
+// ============================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
