@@ -41,6 +41,7 @@ import {
   SET_CUSTOM_HEADER,
   SET_DEV_MODE,
   SET_DEPRECATION_NOTICE,
+  SET_CURRENT_USER,
 } from './ApplicationActions';
 import {
   SET_LOGGING_MODE,
@@ -74,6 +75,7 @@ const initialState = {
   waitForSSO: false,
   standalone: false,
   devMode: false,
+  currentUser: null,
   logging: LOGGING_INITIAL_STATE,
 };
 export const applicationReducer = (state = initialState, action: { type: any; payload: any }) => {
@@ -333,6 +335,11 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
     case SET_DEPRECATION_NOTICE: {
       const { deprecated } = payload;
       state = update(state, { deprecated: deprecated });
+      return state;
+    }
+    case SET_CURRENT_USER: {
+      const { currentUser } = payload;
+      state = update(state, { currentUser: currentUser });
       return state;
     }
     default: {

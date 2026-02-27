@@ -137,3 +137,7 @@ export const applicationGetCustomHeader = (state: any) => {
 export const applicationGetDevMode = (state: any) => {
   return state.application.devMode;
 };
+
+export const applicationGetCurrentUser = (state: any) => {
+  return state.application.currentUser;
+};

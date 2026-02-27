@@ -247,3 +247,9 @@ export const setDeprecationNotice = (deprecated: boolean) => ({
   type: SET_DEPRECATION_NOTICE,
   payload: { deprecated },
 });
+
+export const SET_CURRENT_USER = 'APPLICATION/SET_CURRENT_USER';
+export const setCurrentUser = (currentUser: any) => ({
+  type: SET_CURRENT_USER,
+  payload: { currentUser },
+});

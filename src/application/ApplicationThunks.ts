@@ -14,6 +14,7 @@ import { createNotificationThunk } from '../page/PageThunks';
 import { runCypherQuery } from '../report/ReportQueryRunner';
 import {
   setPageNumberThunk,
+  updateGlobalParameterThunk,
   updateGlobalParametersThunk,
   updateSessionParameterThunk,
 } from '../settings/SettingsThunks';
@@ -42,6 +43,7 @@ import {
   setCustomHeader,
   setDevMode,
   setDeprecationNotice,
+  setCurrentUser,
 } from './ApplicationActions';
 import { setLoggingMode, setLoggingDatabase, setLogErrorNotification } from './logging/LoggingActions';
 import { version } from '../modal/AboutModal';
@@ -475,6 +477,20 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     dispatch(setConnectionModalOpen(false));
     dispatch(setDeprecationNotice(config.deprecationNotice));
     dispatch(setCustomHeader(config.customHeader));
+
+    // Fetch Azure SWA authenticated user
+    try {
+      const authResponse = await fetch('/.auth/me');
+      if (authResponse.ok) {
+        const authData = await authResponse.json();
+        if (authData.clientPrincipal) {
+          dispatch(setCurrentUser(authData.clientPrincipal));
+          dispatch(updateGlobalParameterThunk('neodash_auth_user', authData.clientPrincipal.userDetails));
+        }
+      }
+    } catch (e) {
+      // Not running on Azure SWA (local dev) — ignore
+    }
 
     // Auto-upgrade the dashboard version if an old version is cached.
     if (state.dashboard && state.dashboard.version !== NEODASH_VERSION) {
