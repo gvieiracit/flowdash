@@ -17,47 +17,188 @@ on:
       - '*.md'
       - 'docs/**'
 
+env:
+  IMAGE_NAME: ghcr.io/gvieiracit/flowdash
+  RESOURCE_GROUP: ASOS_AI
+  CONTAINER_APP_ENV: cae-flowdash
+  CONTAINER_APP_PROD: ca-flowdash-prod
+
 jobs:
   build_and_deploy:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
 
-      - name: Inject Neo4j config
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image tags
+        id: tags
         run: |
-          sed -i 's/<NEO4J_PROTOCOL>/${{ secrets.NEO4J_PROTOCOL }}/g' public/config.json
-          sed -i 's/<NEO4J_HOST>/${{ secrets.NEO4J_HOST }}/g' public/config.json
-          sed -i 's/<NEO4J_PORT>/${{ secrets.NEO4J_PORT }}/g' public/config.json
-          sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json
-          sed -i 's/<NEO4J_USERNAME>/${{ secrets.NEO4J_USERNAME }}/g' public/config.json
-          sed -i 's/<NEO4J_PASSWORD>/${{ secrets.NEO4J_PASSWORD }}/g' public/config.json
-          sed -i 's/<NEO4J_CUSTOMHEADER>/${{ secrets.NEO4J_CUSTOMHEADER }}/g' public/config.json
+          SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tags=${{ env.IMAGE_NAME }}:latest,${{ env.IMAGE_NAME }}:sha-${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+            echo "app_name=${{ env.CONTAINER_APP_PROD }}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ env.IMAGE_NAME }}:sha-${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          else
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            echo "tags=${{ env.IMAGE_NAME }}:pr-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "app_name=ca-flowdash-pr-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ env.IMAGE_NAME }}:pr-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build and Deploy to Azure
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/"
-          api_location: ""
-          output_location: "dist"
+          context: .
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Container App (production)
+        if: github.event_name == 'push'
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          containerAppName: ${{ steps.tags.outputs.app_name }}
+          containerAppEnvironment: ${{ env.CONTAINER_APP_ENV }}
+          imageToDeploy: ${{ steps.tags.outputs.image }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ghcr.io
+          registryUsername: ${{ github.actor }}
+          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          environmentVariables: >-
+            AUTH_USER=secretref:auth-user
+            AUTH_PASSWORD=secretref:auth-password
+            standalone=true
+            standaloneProtocol=secretref:neo4j-protocol
+            standaloneHost=secretref:neo4j-host
+            standalonePort=secretref:neo4j-port
+            standaloneDatabase=secretref:neo4j-database
+            standaloneUsername=secretref:neo4j-username
+            standalonePassword=secretref:neo4j-password
+            standaloneDashboardName="My Dashboard"
+            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=secretref:neo4j-customheader
+
+      - name: Deploy preview Container App
+        if: github.event_name == 'pull_request'
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          containerAppName: ${{ steps.tags.outputs.app_name }}
+          containerAppEnvironment: ${{ env.CONTAINER_APP_ENV }}
+          imageToDeploy: ${{ steps.tags.outputs.image }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ghcr.io
+          registryUsername: ${{ github.actor }}
+          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          environmentVariables: >-
+            AUTH_USER=secretref:auth-user
+            AUTH_PASSWORD=secretref:auth-password
+            standalone=true
+            standaloneProtocol=secretref:neo4j-protocol
+            standaloneHost=secretref:neo4j-host
+            standalonePort=secretref:neo4j-port
+            standaloneDatabase=secretref:neo4j-database
+            standaloneUsername=secretref:neo4j-username
+            standalonePassword=secretref:neo4j-password
+            standaloneDashboardName="My Dashboard"
+            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=secretref:neo4j-customheader
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const appName = '${{ steps.tags.outputs.app_name }}';
+            const { execSync } = require('child_process');
+            let url;
+            try {
+              url = execSync(
+                `az containerapp show --name ${appName} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv`
+              ).toString().trim();
+            } catch {
+              url = `${appName}.internal`;
+            }
+            const body = `**Preview deployed**: https://${url}\n\n_Basic auth credentials required to access._`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('Preview deployed'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          action: "close"
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete preview Container App
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          APP_NAME="ca-flowdash-pr-${PR_NUMBER}"
+          az containerapp delete \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yes || true
+
+      - name: Delete preview image from GHCR
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: flowdash
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-pre-release-versions: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

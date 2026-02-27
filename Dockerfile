@@ -18,7 +18,7 @@ RUN yarn run build-minimal
 
 # production stage
 FROM nginx:alpine3.18 AS neodash
-RUN apk upgrade
+RUN apk upgrade && apk add --no-cache apache2-utils
 
 ENV NGINX_PORT=5005
 
@@ -37,11 +37,12 @@ RUN chown -R nginx:nginx /var/cache/nginx && \
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 RUN chown -R nginx:nginx /usr/share/nginx/html/
+RUN touch /etc/nginx/.htpasswd && chown nginx:nginx /etc/nginx/.htpasswd
 
 ## Launch webserver as non-root user.
 USER nginx
 
 EXPOSE $NGINX_PORT
 
-HEALTHCHECK cmd curl --fail "http://localhost:$NGINX_PORT" || exit 1
+HEALTHCHECK CMD /bin/sh -c 'wget -q --spider http://localhost:${NGINX_PORT}/ 2>&1 || [ $? -eq 8 ]'
 LABEL version="2.4.11"

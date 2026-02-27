@@ -1,6 +1,11 @@
 #!/bin/sh
 ###########
-set -e 
+set -e
+
+# Generate htpasswd file for nginx basic auth
+if [ -n "${AUTH_USER}" ] && [ -n "${AUTH_PASSWORD}" ]; then
+  htpasswd -cb /etc/nginx/.htpasswd "${AUTH_USER}" "${AUTH_PASSWORD}"
+fi
 
 echo " \
     { \
