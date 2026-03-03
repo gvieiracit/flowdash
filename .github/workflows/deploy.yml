@@ -83,7 +83,6 @@ jobs:
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
-            AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
             standalone=true
             standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
             standaloneHost=${{ secrets.NEO4J_HOST }}
@@ -155,7 +154,6 @@ jobs:
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
-            AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
             standalone=true
             standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
             standaloneHost=${{ secrets.NEO4J_HOST }}
