@@ -10,6 +10,8 @@ COPY ./yarn.lock /usr/local/src/neodash/yarn.lock
 
 RUN yarn install
 COPY ./ /usr/local/src/neodash
+ENV SENTRY_SUPPRESS_TURBOPACK_WARNING=1
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 RUN yarn run build-minimal
 
 # production stage
