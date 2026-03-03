@@ -82,20 +82,20 @@ jobs:
           registryPassword: ${{ secrets.GITHUB_TOKEN }}
           environmentVariables: >-
             authEnabled=true
-            AUTH_PASSWORD=secretref:auth-password
+            AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
             AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
             standalone=true
-            standaloneProtocol=secretref:neo4j-protocol
-            standaloneHost=secretref:neo4j-host
-            standalonePort=secretref:neo4j-port
-            standaloneDatabase=secretref:neo4j-database
-            standaloneUsername=secretref:neo4j-username
-            standalonePassword=secretref:neo4j-password
+            standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
+            standaloneHost=${{ secrets.NEO4J_HOST }}
+            standalonePort=${{ secrets.NEO4J_PORT }}
+            standaloneDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneUsername=${{ secrets.NEO4J_USERNAME }}
+            standalonePassword=${{ secrets.NEO4J_PASSWORD }}
             standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
-            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneDashboardDatabase=${{ secrets.NEO4J_DATABASE }}
             standaloneAllowLoad=true
             standalonePasswordWarningHidden=true
-            customHeader=secretref:neo4j-customheader
+            customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
   # ──────────────────────────────────────────────
   # PR Preview: opened / updated
@@ -150,20 +150,20 @@ jobs:
           registryPassword: ${{ secrets.GITHUB_TOKEN }}
           environmentVariables: >-
             authEnabled=true
-            AUTH_PASSWORD=secretref:auth-password
+            AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
             AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
             standalone=true
-            standaloneProtocol=secretref:neo4j-protocol
-            standaloneHost=secretref:neo4j-host
-            standalonePort=secretref:neo4j-port
-            standaloneDatabase=secretref:neo4j-database
-            standaloneUsername=secretref:neo4j-username
-            standalonePassword=secretref:neo4j-password
+            standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
+            standaloneHost=${{ secrets.NEO4J_HOST }}
+            standalonePort=${{ secrets.NEO4J_PORT }}
+            standaloneDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneUsername=${{ secrets.NEO4J_USERNAME }}
+            standalonePassword=${{ secrets.NEO4J_PASSWORD }}
             standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
-            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneDashboardDatabase=${{ secrets.NEO4J_DATABASE }}
             standaloneAllowLoad=true
             standalonePasswordWarningHidden=true
-            customHeader=secretref:neo4j-customheader
+            customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
       - name: Get preview URL
         id: preview-url
