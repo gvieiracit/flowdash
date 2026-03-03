@@ -6,6 +6,7 @@ set -e
 if [ -n "${AUTH_PASSWORD}" ]; then
   AUTH_COOKIE_TOKEN=$(printf '%s' "${AUTH_PASSWORD}" | sha256sum | awk '{print $1}')
   cat > /etc/nginx/conf.d/auth-map.conf << MAP_EOF
+map_hash_bucket_size 128;
 map \$cookie_flowdash_token \$flowdash_auth_valid {
     "${AUTH_COOKIE_TOKEN}" 1;
     default                0;
