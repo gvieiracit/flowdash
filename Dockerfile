@@ -4,10 +4,6 @@ FROM node:lts-alpine3.18 AS build-stage
 RUN yarn global add typescript jest
 WORKDIR /usr/local/src/neodash
 
-# Pull source code if you have not cloned the repository
-#RUN apk add --no-cache git
-#RUN git clone https://github.com/neo4j-labs/neodash.git /usr/local/src/neodash
-
 # Copy sources and install/build
 COPY ./package.json /usr/local/src/neodash/package.json
 COPY ./yarn.lock /usr/local/src/neodash/yarn.lock

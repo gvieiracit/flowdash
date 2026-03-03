@@ -17,47 +17,200 @@ on:
       - '*.md'
       - 'docs/**'
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: gvieiracit/flowdash
+  RESOURCE_GROUP: ASOS_AI
+  ENVIRONMENT: cae-flowdash
+  PROD_APP_NAME: ca-flowdash-prod
+
 jobs:
-  build_and_deploy:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  # ──────────────────────────────────────────────
+  # Production: push to master
+  # ──────────────────────────────────────────────
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    name: Build and Deploy
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
 
-      - name: Inject Neo4j config
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.sha.outputs.short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ env.PROD_APP_NAME }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.sha.outputs.short }}
+          containerAppEnvironment: ${{ env.ENVIRONMENT }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ${{ env.REGISTRY }}
+          registryUsername: ${{ github.actor }}
+          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          environmentVariables: >-
+            authEnabled=true
+            AUTH_PASSWORD=secretref:auth-password
+            AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
+            standalone=true
+            standaloneProtocol=secretref:neo4j-protocol
+            standaloneHost=secretref:neo4j-host
+            standalonePort=secretref:neo4j-port
+            standaloneDatabase=secretref:neo4j-database
+            standaloneUsername=secretref:neo4j-username
+            standalonePassword=secretref:neo4j-password
+            standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
+            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=secretref:neo4j-customheader
+
+  # ──────────────────────────────────────────────
+  # PR Preview: opened / updated
+  # ──────────────────────────────────────────────
+  deploy-preview:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy preview Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ca-flowdash-pr-${{ github.event.pull_request.number }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}
+          containerAppEnvironment: ${{ env.ENVIRONMENT }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ${{ env.REGISTRY }}
+          registryUsername: ${{ github.actor }}
+          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          environmentVariables: >-
+            authEnabled=true
+            AUTH_PASSWORD=secretref:auth-password
+            AUTH_ALLOWED_DOMAINS=["ciandt.com","asos.com"]
+            standalone=true
+            standaloneProtocol=secretref:neo4j-protocol
+            standaloneHost=secretref:neo4j-host
+            standalonePort=secretref:neo4j-port
+            standaloneDatabase=secretref:neo4j-database
+            standaloneUsername=secretref:neo4j-username
+            standalonePassword=secretref:neo4j-password
+            standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
+            standaloneDashboardDatabase=secretref:neo4j-database
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=secretref:neo4j-customheader
+
+      - name: Get preview URL
+        id: preview-url
         run: |
-          sed -i 's/<NEO4J_PROTOCOL>/${{ secrets.NEO4J_PROTOCOL }}/g' public/config.json
-          sed -i 's/<NEO4J_HOST>/${{ secrets.NEO4J_HOST }}/g' public/config.json
-          sed -i 's/<NEO4J_PORT>/${{ secrets.NEO4J_PORT }}/g' public/config.json
-          sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json
-          sed -i 's/<NEO4J_USERNAME>/${{ secrets.NEO4J_USERNAME }}/g' public/config.json
-          sed -i 's/<NEO4J_PASSWORD>/${{ secrets.NEO4J_PASSWORD }}/g' public/config.json
-          sed -i 's/<NEO4J_CUSTOMHEADER>/${{ secrets.NEO4J_CUSTOMHEADER }}/g' public/config.json
+          FQDN=$(az containerapp show \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "url=https://${FQDN}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and Deploy to Azure
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Comment PR with preview URL
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/"
-          api_location: ""
-          output_location: "dist"
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Preview Deployment
+            Preview is ready at: ${{ steps.preview-url.outputs.url }}
+            Sign in with your **@ciandt.com** or **@asos.com** email.
+            _Updated for commit ${{ github.sha }}_
 
-  close_pull_request:
+  # ──────────────────────────────────────────────
+  # Cleanup: PR closed
+  # ──────────────────────────────────────────────
+  cleanup-preview:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Close Pull Request
+    permissions:
+      packages: write
     steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          action: "close"
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete preview Container App
+        run: |
+          az containerapp delete \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yes
+
+      - name: Delete preview image from GHCR
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: flowdash
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-pre-release-versions: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

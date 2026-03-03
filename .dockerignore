@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+.claude
+cypress
+dist
+*.md
+.eslintrc.json
+.prettierrc.json
+.prettierignore
+.husky
