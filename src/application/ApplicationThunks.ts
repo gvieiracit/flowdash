@@ -526,6 +526,7 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
       if (!restored) {
         localStorage.removeItem('flowdash_auth_email');
         dispatch(setAuthUserEmail(null));
+        dispatch(setAuthLoginError(''));
       }
     }
 
