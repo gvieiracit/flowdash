@@ -48,8 +48,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ authAllowedDomains, onLogin, er
     <div className='n-flex n-items-center n-justify-center n-h-screen n-w-screen n-bg-palette-neutral-bg-default'>
       <div className='n-w-96 n-p-8 n-rounded-lg n-shadow-lg n-bg-palette-neutral-bg-weak'>
         <div className='n-text-center n-mb-6'>
-          <img src='flowdash-icon.svg' alt='FlowDash' className='n-mx-auto n-mb-4' style={{ height: 48 }} />
-          <h1 className='n-text-xl n-font-bold'>FlowDash</h1>
+          <img src='ciandt-flow-logo.svg' alt='FlowDash' className='n-mx-auto n-mb-4' style={{ height: 32 }} />
           <p className='n-text-sm n-text-palette-neutral-text-weak n-mt-1'>Sign in to continue</p>
         </div>
 
@@ -57,7 +56,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ authAllowedDomains, onLogin, er
           <div className='n-mb-4'>
             <TextInput
               label='Email'
-              placeholder='your.name@ciandt.com'
+              placeholder='your.login@company.com'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoFocus
