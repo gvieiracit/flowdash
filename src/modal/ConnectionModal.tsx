@@ -30,12 +30,12 @@ export default function NeoConnectionModal({
 
   // Make sure local vars are updated on external connection updates.
   useEffect(() => {
-    setProtocol(connection.protocol);
-    setUrl(connection.url);
-    setUsername(connection.username);
-    setPassword(connection.password);
-    setPort(connection.port);
-    setDatabase(connection.database);
+    setProtocol(connection.protocol || 'neo4j+s');
+    setUrl(connection.url || '');
+    setPort(connection.port || '7687');
+    setUsername(connection.username || '');
+    setPassword(connection.password || '');
+    setDatabase(connection.database || 'neo4j');
   }, [JSON.stringify(connection)]);
 
   useEffect(() => {
