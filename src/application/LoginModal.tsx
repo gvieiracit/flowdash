@@ -45,11 +45,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ authAllowedDomains, onLogin, er
   const displayError = validationError || error;
 
   return (
-    <div className='n-flex n-items-center n-justify-center n-h-screen n-w-screen n-bg-palette-neutral-bg-default'>
-      <div className='n-w-96 n-p-8 n-rounded-lg n-shadow-lg n-bg-palette-neutral-bg-weak'>
-        <div className='n-text-center n-mb-6'>
-          <img src='ciandt-flow-logo.svg' alt='FlowDash' className='n-mx-auto n-mb-4' style={{ height: 32 }} />
-          <p className='n-text-sm n-text-palette-neutral-text-weak n-mt-1'>Sign in to continue</p>
+    <div
+      className='n-bg-palette-neutral-bg-default'
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh' }}
+    >
+      <div className='n-w-96 n-p-8 n-rounded-lg n-shadow-lg n-bg-palette-neutral-bg-weak' style={{ textAlign: 'center' }}>
+        <div className='n-mb-6'>
+          <img src='ciandt-flow-logo.svg' alt='FlowDash' style={{ height: 32, margin: '0 auto 16px' }} />
+          <p className='n-text-sm n-text-palette-neutral-text-weak'>Sign in to continue</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -74,7 +77,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ authAllowedDomains, onLogin, er
           </div>
 
           {displayError && (
-            <div className='n-mb-4 n-text-sm' style={{ color: '#dc2626' }}>
+            <div className='n-mb-4 n-text-sm' style={{ color: '#dc2626', textAlign: 'center' }}>
               {displayError}
             </div>
           )}
