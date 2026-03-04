@@ -96,6 +96,13 @@ jobs:
             standalonePasswordWarningHidden=true
             customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
+      - name: Set min replicas to 1
+        run: |
+          az containerapp update \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --min-replicas 1
+
   # ──────────────────────────────────────────────
   # PR Preview: opened / updated
   # ──────────────────────────────────────────────
@@ -166,6 +173,13 @@ jobs:
             standaloneAllowLoad=true
             standalonePasswordWarningHidden=true
             customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
+
+      - name: Set min replicas to 1
+        run: |
+          az containerapp update \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --min-replicas 1
 
       - name: Get preview URL
         id: preview-url
