@@ -627,7 +627,9 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     }
 
     // If auth required and user not logged in, pause initialization
-    if (authEnabled && !state.application.authUserEmail && !localStorage.getItem('flowdash_auth_email')) {
+    // Re-read state since restoreAuthSession may have cleared authUserEmail
+    const currentState = getState();
+    if (authEnabled && !currentState.application.authUserEmail && !localStorage.getItem('flowdash_auth_email')) {
       dispatch(setPendingConfig(config, paramsToSetAfterConnecting, standalone));
       return;
     }
