@@ -134,17 +134,12 @@ const Application = ({
   // If auth is enabled and user is not logged in, show the login modal
   if (authEnabled && !authUserEmail) {
     return (
-      <div
-        ref={ref}
-        className={`n-bg-palette-neutral-bg-default n-h-screen n-w-screen n-flex n-flex-col n-overflow-hidden`}
-      >
-        <LoginModal
-          authAllowedDomains={authAllowedDomains}
-          onLogin={onAuthLogin}
-          error={authLoginError}
-          loading={authLoginLoading}
-        />
-      </div>
+      <LoginModal
+        authAllowedDomains={authAllowedDomains}
+        onLogin={onAuthLogin}
+        error={authLoginError}
+        loading={authLoginLoading}
+      />
     );
   }
 
