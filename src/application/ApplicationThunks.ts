@@ -525,6 +525,7 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
       const restored = await restoreAuthSession(config, authAllowedDomains, dispatch);
       if (!restored) {
         localStorage.removeItem('flowdash_auth_email');
+        dispatch(setAuthUserEmail(null));
       }
     }
 
