@@ -54,7 +54,7 @@ const parseStatements = (content: string): string[] => {
     if (char === "'" && !inDoubleQuote) {
       inSingleQuote = !inSingleQuote;
       currentStatement += char;
-      i++;
+      i += 1;
       continue;
     }
 
@@ -62,7 +62,7 @@ const parseStatements = (content: string): string[] => {
     if (char === '"' && !inSingleQuote) {
       inDoubleQuote = !inDoubleQuote;
       currentStatement += char;
-      i++;
+      i += 1;
       continue;
     }
 
@@ -73,13 +73,13 @@ const parseStatements = (content: string): string[] => {
         statements.push(trimmed);
       }
       currentStatement = '';
-      i++;
+      i += 1;
       continue;
     }
 
     // Regular character
     currentStatement += char;
-    i++;
+    i += 1;
   }
 
   // Don't forget the last statement (if no trailing semicolon)
@@ -348,7 +348,7 @@ const CypherUploadModal = ({ open, handleClose, database, createNotification }: 
             return;
           }
           
-          i++;
+          i += 1;
           const progress = Math.round((i / statements.length) * 100);
           updateExecutionState({
             executedStatements: i,
@@ -363,7 +363,7 @@ const CypherUploadModal = ({ open, handleClose, database, createNotification }: 
         
         while (i < statements.length && batch.length < batchSize && !isSchemaStatement(statements[i])) {
           batch.push(statements[i]);
-          i++;
+          i += 1;
         }
         
         if (batch.length === 0) {
@@ -387,41 +387,23 @@ const CypherUploadModal = ({ open, handleClose, database, createNotification }: 
           constraintsRemoved: 0,
         };
         
+        let failedStatementIndex = -1;
         try {
-          for (let j = 0; j < batch.length; j++) {
-            const batchStatement = batch[j];
-            
-            try {
-              const result = await tx.run(batchStatement, {});
-              const counters = result.summary.counters.updates();
-              batchCounters.nodesCreated += counters.nodesCreated || 0;
-              batchCounters.nodesDeleted += counters.nodesDeleted || 0;
-              batchCounters.relationshipsCreated += counters.relationshipsCreated || 0;
-              batchCounters.relationshipsDeleted += counters.relationshipsDeleted || 0;
-              batchCounters.propertiesSet += counters.propertiesSet || 0;
-              batchCounters.labelsAdded += counters.labelsAdded || 0;
-              batchCounters.labelsRemoved += counters.labelsRemoved || 0;
-              batchCounters.indexesAdded += counters.indexesAdded || 0;
-              batchCounters.indexesRemoved += counters.indexesRemoved || 0;
-              batchCounters.constraintsAdded += counters.constraintsAdded || 0;
-              batchCounters.constraintsRemoved += counters.constraintsRemoved || 0;
-            } catch (error: any) {
-              await tx.rollback();
-              const currentIndex = batchStart + j;
-              const currentState = getExecutionState();
-              const errorMsg = `Statement ${currentIndex + 1} failed: ${error.message || 'Unknown error'}`;
-              const partialSummary = buildSummaryMessage(currentState.counters);
-              const fullErrorMsg = `${errorMsg}\n\nPartial execution summary (${currentIndex} of ${statements.length} statements):\n${partialSummary}`;
-              
-              updateExecutionState({
-                isRunning: false,
-                errorMessage: fullErrorMsg,
-                status: 'error',
-              });
-              createNotification('Cypher Execution Failed', errorMsg);
-              await session.close();
-              return;
-            }
+          for (let j = 0; j < batch.length; j += 1) {
+            failedStatementIndex = batchStart + j;
+            const result = await tx.run(batch[j], {});
+            const counters = result.summary.counters.updates();
+            batchCounters.nodesCreated += counters.nodesCreated || 0;
+            batchCounters.nodesDeleted += counters.nodesDeleted || 0;
+            batchCounters.relationshipsCreated += counters.relationshipsCreated || 0;
+            batchCounters.relationshipsDeleted += counters.relationshipsDeleted || 0;
+            batchCounters.propertiesSet += counters.propertiesSet || 0;
+            batchCounters.labelsAdded += counters.labelsAdded || 0;
+            batchCounters.labelsRemoved += counters.labelsRemoved || 0;
+            batchCounters.indexesAdded += counters.indexesAdded || 0;
+            batchCounters.indexesRemoved += counters.indexesRemoved || 0;
+            batchCounters.constraintsAdded += counters.constraintsAdded || 0;
+            batchCounters.constraintsRemoved += counters.constraintsRemoved || 0;
           }
           
           await tx.commit();
@@ -441,7 +423,8 @@ const CypherUploadModal = ({ open, handleClose, database, createNotification }: 
           }
           
           const currentState = getExecutionState();
-          const errorMsg = `Batch commit failed at statement ${batchStart + 1}: ${error.message || 'Unknown error'}`;
+          const stmtLabel = failedStatementIndex >= 0 ? failedStatementIndex + 1 : batchStart + 1;
+          const errorMsg = `Statement ${stmtLabel} failed: ${error.message || 'Unknown error'}`;
           const partialSummary = buildSummaryMessage(currentState.counters);
           const fullErrorMsg = `${errorMsg}\n\nPartial execution summary:\n${partialSummary}`;
           

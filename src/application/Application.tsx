@@ -82,7 +82,7 @@ const Application = ({
   standaloneSettings,
   aboutModalOpen,
   loadDashboard,
-  deprecated,
+  _deprecated,
   shareDetails,
   createConnection,
   setConnectionDetails,
