@@ -18,8 +18,8 @@ on:
       - 'docs/**'
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: gvieiracit/flowdash
+  ACR_NAME: acrflowdash
+  ACR_LOGIN_SERVER: acrflowdash.azurecr.io
   RESOURCE_GROUP: ASOS_AI
   ENVIRONMENT: cae-flowdash
   PROD_APP_NAME: ca-flowdash-prod
@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,12 +40,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Extract short SHA
         id: sha
@@ -58,28 +58,21 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.sha.outputs.short }}
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:latest
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:sha-${{ steps.sha.outputs.short }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Container App
         uses: azure/container-apps-deploy-action@v2
         with:
           containerAppName: ${{ env.PROD_APP_NAME }}
           resourceGroup: ${{ env.RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.sha.outputs.short }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/flowdash:sha-${{ steps.sha.outputs.short }}
           containerAppEnvironment: ${{ env.ENVIRONMENT }}
           targetPort: 5005
           ingress: external
-          registryUrl: ${{ env.REGISTRY }}
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          acrName: ${{ env.ACR_NAME }}
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
@@ -111,7 +104,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       pull-requests: write
     steps:
       - name: Checkout
@@ -120,12 +112,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Extract short SHA
         id: sha
@@ -137,7 +130,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -151,13 +144,11 @@ jobs:
         with:
           containerAppName: ca-flowdash-pr-${{ github.event.pull_request.number }}
           resourceGroup: ${{ env.RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/flowdash:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
           containerAppEnvironment: ${{ env.ENVIRONMENT }}
           targetPort: 5005
           ingress: external
-          registryUrl: ${{ env.REGISTRY }}
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          acrName: ${{ env.ACR_NAME }}
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
@@ -206,8 +197,6 @@ jobs:
   cleanup-preview:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -221,12 +210,15 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --yes
 
-      - name: Delete preview image from GHCR
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: flowdash
-          package-type: container
-          min-versions-to-keep: 0
-          delete-only-pre-release-versions: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Delete preview image tags from ACR
+        run: |
+          for tag in $(az acr repository show-tags \
+            --name ${{ env.ACR_NAME }} \
+            --repository flowdash \
+            --query "[?starts_with(@, 'pr-${{ github.event.pull_request.number }}-')]" \
+            -o tsv 2>/dev/null); do
+            az acr repository untag \
+              --name ${{ env.ACR_NAME }} \
+              --image "flowdash:$tag" 2>/dev/null || true
+          done
         continue-on-error: true

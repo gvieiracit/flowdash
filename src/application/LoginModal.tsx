@@ -51,7 +51,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ authAllowedDomains, onLogin, er
     >
       <div className='n-w-96 n-p-8 n-rounded-lg n-shadow-lg n-bg-palette-neutral-bg-weak' style={{ textAlign: 'center' }}>
         <div className='n-mb-6'>
-          <img src='ciandt-flow-logo.svg' alt='FlowDash' style={{ height: 32, display: 'block', margin: '0 auto 16px' }} />
+          <img src='ciandt-flow-logo.svg' alt='FlowDash' style={{ height: 32, display: 'block', margin: '10px 0px 10px 98px' }} />
           <p className='n-text-sm n-text-palette-neutral-text-weak'>Sign in to continue</p>
         </div>
 
