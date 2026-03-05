@@ -3,7 +3,9 @@
 set -e
 
 # ── Auth: generate cookie token and nginx map config ──
-if [ -n "${AUTH_PASSWORD}" ]; then
+# Only protect config-credentials.json when authEnabled=true AND AUTH_PASSWORD is set.
+# When auth is disabled, credentials are served publicly so the app can auto-connect.
+if [ "${authEnabled}" = "true" ] && [ -n "${AUTH_PASSWORD}" ]; then
   AUTH_COOKIE_TOKEN=$(printf '%s' "${AUTH_PASSWORD}" | sha256sum | awk '{print $1}')
   cat > /etc/nginx/conf.d/auth-map.conf << MAP_EOF
 map_hash_bucket_size 128;
@@ -12,14 +14,15 @@ map \$cookie_flowdash_token \$flowdash_auth_valid {
     default                0;
 }
 MAP_EOF
-  echo "Auth cookie token configured."
+  echo "Auth enabled: cookie token configured."
 else
   cat > /etc/nginx/conf.d/auth-map.conf << MAP_EOF
+map_hash_bucket_size 128;
 map \$cookie_flowdash_token \$flowdash_auth_valid {
-    default 0;
+    default 1;
 }
 MAP_EOF
-  echo "WARNING: AUTH_PASSWORD not set. config-credentials.json will be inaccessible."
+  echo "Auth disabled: config-credentials.json is publicly accessible."
 fi
 
 # Default allowed domains

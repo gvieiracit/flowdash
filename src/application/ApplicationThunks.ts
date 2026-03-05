@@ -448,6 +448,20 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     console.log('No config file detected. Setting to safe defaults.');
   }
 
+  // Always try to fetch credentials and merge into config.
+  // When authEnabled=false, nginx serves credentials publicly → auto-connect works.
+  // When authEnabled=true with a valid cookie, credentials are merged early.
+  // When authEnabled=true without a cookie, fetch returns 403 → auth flow handles it later.
+  try {
+    const credResponse = await fetch('config-credentials.json');
+    if (credResponse.ok) {
+      const credentials = await credResponse.json();
+      config = { ...config, ...credentials };
+    }
+  } catch (e) {
+    // Credentials not available — will be handled by auth flow if needed
+  }
+
   try {
     // Parse the URL parameters to see if there's any deep linking of parameters.
     const state = getState();
@@ -715,7 +729,8 @@ export const initializeApplicationAsStandaloneThunk =
       dispatch(clearNotification());
     }
 
-    // Override for when username and password are specified in the config - automatically connect to the specified URL.
+    // Auto-connect when credentials are available. In standalone mode, never show the
+    // ConnectionModal — use ?devMode=true to access it via editor mode instead.
     if (config.standaloneUsername && config.standalonePassword) {
       dispatch(
         createConnectionThunk(
@@ -728,7 +743,12 @@ export const initializeApplicationAsStandaloneThunk =
         )
       );
     } else {
-      dispatch(setConnectionModalOpen(true));
+      dispatch(
+        createNotificationThunk(
+          'Connection credentials missing',
+          'Neo4j credentials not found in configuration. Use ?devMode=true to manually configure the connection.'
+        )
+      );
     }
     dispatch(handleSharedDashboardsThunk());
   };
