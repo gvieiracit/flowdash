@@ -42,7 +42,13 @@ import {
   setCustomHeader,
   setDevMode,
   setDeprecationNotice,
+  setAuthEnabled,
+  setAuthUserEmail,
+  setAuthLoginError,
+  setAuthLoginLoading,
+  setPendingConfig,
 } from './ApplicationActions';
+import { sha256 } from './LoginModal';
 import { setLoggingMode, setLoggingDatabase, setLogErrorNotification } from './logging/LoggingActions';
 import { version } from '../modal/AboutModal';
 import { applicationIsStandalone } from './ApplicationSelectors';
@@ -372,6 +378,34 @@ export const onConfirmLoadSharedDashboardThunk = () => (dispatch: any, getState:
 };
 
 /**
+ * Attempt to restore an existing auth session from localStorage.
+ * Returns true if the session was successfully restored, false otherwise.
+ */
+const restoreAuthSession = async (config: any, authAllowedDomains: string[], dispatch: any): Promise<boolean> => {
+  const savedEmail = localStorage.getItem('flowdash_auth_email');
+  if (!savedEmail) {
+    return false;
+  }
+  const savedDomain = savedEmail.split('@')[1]?.toLowerCase();
+  if (!savedDomain || !authAllowedDomains.includes(savedDomain)) {
+    return false;
+  }
+  try {
+    const credResponse = await fetch('config-credentials.json');
+    if (!credResponse.ok) {
+      return false;
+    }
+    const credentials = await credResponse.json();
+    Object.assign(config, credentials);
+    dispatch(setAuthUserEmail(savedEmail));
+    dispatch(updateSessionParameterThunk('neodash_user_email', savedEmail));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Initializes the NeoDash application.
  *
  * This is a multi step process, starting with loading the runtime configuration.
@@ -400,6 +434,11 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     standaloneDatabaseList: 'neo4j',
     customHeader: '',
     deprecationNotice: false,
+    standaloneUsername: '',
+    standalonePassword: '',
+    standalonePasswordWarningHidden: false,
+    authEnabled: false,
+    authAllowedDomains: [] as string[],
   };
   try {
     config = await (await fetch('config.json')).json();
@@ -407,6 +446,20 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     // Config may not be found, for example when we are in Neo4j Desktop.
     // eslint-disable-next-line no-console
     console.log('No config file detected. Setting to safe defaults.');
+  }
+
+  // Always try to fetch credentials and merge into config.
+  // When authEnabled=false, nginx serves credentials publicly → auto-connect works.
+  // When authEnabled=true with a valid cookie, credentials are merged early.
+  // When authEnabled=true without a cookie, fetch returns 403 → auth flow handles it later.
+  try {
+    const credResponse = await fetch('config-credentials.json');
+    if (credResponse.ok) {
+      const credentials = await credResponse.json();
+      config = { ...config, ...credentials };
+    }
+  } catch (e) {
+    // Credentials not available — will be handled by auth flow if needed
   }
 
   try {
@@ -475,6 +528,21 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
     dispatch(setConnectionModalOpen(false));
     dispatch(setDeprecationNotice(config.deprecationNotice));
     dispatch(setCustomHeader(config.customHeader));
+
+    // Auth configuration
+    const authEnabled = config.authEnabled || false;
+    const authAllowedDomains = config.authAllowedDomains || [];
+    dispatch(setAuthEnabled(authEnabled, authAllowedDomains));
+
+    // Check for existing auth session and restore if valid
+    if (authEnabled) {
+      const restored = await restoreAuthSession(config, authAllowedDomains, dispatch);
+      if (!restored) {
+        localStorage.removeItem('flowdash_auth_email');
+        dispatch(setAuthUserEmail(null));
+        dispatch(setAuthLoginError(''));
+      }
+    }
 
     // Auto-upgrade the dashboard version if an old version is cached.
     if (state.dashboard && state.dashboard.version !== NEODASH_VERSION) {
@@ -573,6 +641,14 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
       sessionStorage.setItem('SSO_PARAMS_BEFORE_REDIRECT', JSON.stringify(paramsToStore));
     }
 
+    // If auth required and user not logged in, pause initialization
+    // Re-read state since restoreAuthSession may have cleared authUserEmail
+    const currentState = getState();
+    if (authEnabled && !currentState.application.authUserEmail && !localStorage.getItem('flowdash_auth_email')) {
+      dispatch(setPendingConfig(config, paramsToSetAfterConnecting, standalone));
+      return;
+    }
+
     if (standalone) {
       dispatch(initializeApplicationAsStandaloneThunk(config, paramsToSetAfterConnecting));
     } else {
@@ -653,7 +729,8 @@ export const initializeApplicationAsStandaloneThunk =
       dispatch(clearNotification());
     }
 
-    // Override for when username and password are specified in the config - automatically connect to the specified URL.
+    // Auto-connect when credentials are available. In standalone mode, never show the
+    // ConnectionModal — use ?devMode=true to access it via editor mode instead.
     if (config.standaloneUsername && config.standalonePassword) {
       dispatch(
         createConnectionThunk(
@@ -666,7 +743,71 @@ export const initializeApplicationAsStandaloneThunk =
         )
       );
     } else {
-      dispatch(setConnectionModalOpen(true));
+      dispatch(
+        createNotificationThunk(
+          'Connection credentials missing',
+          'Neo4j credentials not found in configuration. Use ?devMode=true to manually configure the connection.'
+        )
+      );
     }
     dispatch(handleSharedDashboardsThunk());
   };
+
+/**
+ * Attempt login: set cookie, fetch protected credentials, then resume app init.
+ */
+export const attemptLoginThunk = (email: string, password: string) => async (dispatch: any, getState: any) => {
+  dispatch(setAuthLoginLoading(true));
+  dispatch(setAuthLoginError(''));
+
+  try {
+    // Set auth cookie (SHA-256 of password)
+    const token = await sha256(password);
+    document.cookie = `flowdash_token=${token};path=/;SameSite=Strict`;
+
+    // Try to fetch protected credentials
+    const response = await fetch('config-credentials.json');
+
+    if (!response.ok) {
+      // 403 = wrong password (cookie didn't match)
+      document.cookie = 'flowdash_token=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      dispatch(setAuthLoginError('Invalid password.'));
+      return;
+    }
+
+    // Password correct — merge credentials and initialize
+    const credentials = await response.json();
+    dispatch(setAuthUserEmail(email));
+    localStorage.setItem('flowdash_auth_email', email);
+    dispatch(updateSessionParameterThunk('neodash_user_email', email));
+
+    // Resume initialization with merged config
+    const state = getState();
+    const { pendingConfig, pendingParams, pendingStandalone } = state.application;
+
+    if (pendingConfig) {
+      const fullConfig = { ...pendingConfig, ...credentials };
+      if (pendingStandalone) {
+        dispatch(initializeApplicationAsStandaloneThunk(fullConfig, pendingParams));
+      } else {
+        dispatch(initializeApplicationAsEditorThunk(fullConfig, pendingParams));
+      }
+      dispatch(setPendingConfig(null, null, false));
+    }
+
+    dispatch(setAuthLoginLoading(false));
+  } catch (e) {
+    document.cookie = 'flowdash_token=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    dispatch(setAuthLoginError('An error occurred. Please try again.'));
+  }
+};
+
+/**
+ * Logout: clear auth state and reload.
+ */
+export const logoutAuthThunk = () => (dispatch: any) => {
+  localStorage.removeItem('flowdash_auth_email');
+  document.cookie = 'flowdash_token=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  dispatch(setAuthUserEmail(null));
+  window.location.reload();
+};

@@ -41,6 +41,11 @@ import {
   SET_CUSTOM_HEADER,
   SET_DEV_MODE,
   SET_DEPRECATION_NOTICE,
+  SET_AUTH_ENABLED,
+  SET_AUTH_USER_EMAIL,
+  SET_AUTH_LOGIN_ERROR,
+  SET_AUTH_LOGIN_LOADING,
+  SET_PENDING_CONFIG,
 } from './ApplicationActions';
 import {
   SET_LOGGING_MODE,
@@ -74,6 +79,14 @@ const initialState = {
   waitForSSO: false,
   standalone: false,
   devMode: false,
+  authEnabled: false,
+  authAllowedDomains: [] as string[],
+  authUserEmail: null as string | null,
+  authLoginError: '',
+  authLoginLoading: false,
+  pendingConfig: null as any,
+  pendingParams: null as any,
+  pendingStandalone: false,
   logging: LOGGING_INITIAL_STATE,
 };
 export const applicationReducer = (state = initialState, action: { type: any; payload: any }) => {
@@ -333,6 +346,31 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
     case SET_DEPRECATION_NOTICE: {
       const { deprecated } = payload;
       state = update(state, { deprecated: deprecated });
+      return state;
+    }
+    case SET_AUTH_ENABLED: {
+      const { enabled, allowedDomains } = payload;
+      state = update(state, { authEnabled: enabled, authAllowedDomains: allowedDomains });
+      return state;
+    }
+    case SET_AUTH_USER_EMAIL: {
+      const { email } = payload;
+      state = update(state, { authUserEmail: email });
+      return state;
+    }
+    case SET_AUTH_LOGIN_ERROR: {
+      const { error } = payload;
+      state = update(state, { authLoginError: error, authLoginLoading: false });
+      return state;
+    }
+    case SET_AUTH_LOGIN_LOADING: {
+      const { loading } = payload;
+      state = update(state, { authLoginLoading: loading });
+      return state;
+    }
+    case SET_PENDING_CONFIG: {
+      const { config, params, standalone: isStandalone } = payload;
+      state = update(state, { pendingConfig: config, pendingParams: params, pendingStandalone: isStandalone });
       return state;
     }
     default: {

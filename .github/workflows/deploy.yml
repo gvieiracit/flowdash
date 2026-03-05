@@ -17,47 +17,292 @@ on:
       - '*.md'
       - 'docs/**'
 
+env:
+  ACR_NAME: acrflowdash
+  ACR_LOGIN_SERVER: acrflowdash.azurecr.io
+  RESOURCE_GROUP: ASOS_AI
+  ENVIRONMENT: cae-flowdash
+  PROD_APP_NAME: ca-flowdash-prod
+
 jobs:
-  build_and_deploy:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  # ──────────────────────────────────────────────
+  # Production: push to master
+  # ──────────────────────────────────────────────
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    name: Build and Deploy
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
 
-      - name: Inject Neo4j config
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Extract short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:latest
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:sha-${{ steps.sha.outputs.short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Get ACR credentials
+        id: acr-creds
         run: |
-          sed -i 's/<NEO4J_PROTOCOL>/${{ secrets.NEO4J_PROTOCOL }}/g' public/config.json
-          sed -i 's/<NEO4J_HOST>/${{ secrets.NEO4J_HOST }}/g' public/config.json
-          sed -i 's/<NEO4J_PORT>/${{ secrets.NEO4J_PORT }}/g' public/config.json
-          sed -i 's/<NEO4J_DATABASE>/${{ secrets.NEO4J_DATABASE }}/g' public/config.json
-          sed -i 's/<NEO4J_USERNAME>/${{ secrets.NEO4J_USERNAME }}/g' public/config.json
-          sed -i 's/<NEO4J_PASSWORD>/${{ secrets.NEO4J_PASSWORD }}/g' public/config.json
-          sed -i 's/<NEO4J_CUSTOMHEADER>/${{ secrets.NEO4J_CUSTOMHEADER }}/g' public/config.json
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "password=$ACR_PASSWORD" >> "$GITHUB_OUTPUT"
 
-      - name: Build and Deploy to Azure
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Deploy to Container App
+        uses: azure/container-apps-deploy-action@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/"
-          api_location: ""
-          output_location: "dist"
+          containerAppName: ${{ env.PROD_APP_NAME }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/flowdash:sha-${{ steps.sha.outputs.short }}
+          containerAppEnvironment: ${{ env.ENVIRONMENT }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ${{ env.ACR_LOGIN_SERVER }}
+          registryUsername: ${{ env.ACR_NAME }}
+          registryPassword: ${{ steps.acr-creds.outputs.password }}
+          environmentVariables: >-
+            authEnabled=true
+            AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
+            standalone=true
+            standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
+            standaloneHost=${{ secrets.NEO4J_HOST }}
+            standalonePort=${{ secrets.NEO4J_PORT }}
+            standaloneDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneUsername=${{ secrets.NEO4J_USERNAME }}
+            standalonePassword=${{ secrets.NEO4J_PASSWORD }}
+            standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
+            standaloneDashboardDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
-  close_pull_request:
+      - name: Set replicas to 2
+        run: |
+          az containerapp update \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --min-replicas 2 \
+            --max-replicas 2
+
+      - name: Configure health probes
+        run: |
+          CONTAINER_NAME=$(az containerapp show \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].name" -o tsv)
+          cat > /tmp/probes.yaml <<EOF
+          properties:
+            template:
+              containers:
+                - name: ${CONTAINER_NAME}
+                  probes:
+                    - type: Liveness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 10
+                      periodSeconds: 30
+                      failureThreshold: 3
+                    - type: Readiness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      failureThreshold: 3
+          EOF
+          az containerapp update \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yaml /tmp/probes.yaml
+
+  # ──────────────────────────────────────────────
+  # PR Preview: opened / updated
+  # ──────────────────────────────────────────────
+  deploy-preview:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Extract short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/flowdash:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get ACR credentials
+        id: acr-creds
+        run: |
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "password=$ACR_PASSWORD" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy preview Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ca-flowdash-pr-${{ github.event.pull_request.number }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/flowdash:pr-${{ github.event.pull_request.number }}-${{ steps.sha.outputs.short }}
+          containerAppEnvironment: ${{ env.ENVIRONMENT }}
+          targetPort: 5005
+          ingress: external
+          registryUrl: ${{ env.ACR_LOGIN_SERVER }}
+          registryUsername: ${{ env.ACR_NAME }}
+          registryPassword: ${{ steps.acr-creds.outputs.password }}
+          environmentVariables: >-
+            authEnabled=true
+            AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
+            standalone=true
+            standaloneProtocol=${{ secrets.NEO4J_PROTOCOL }}
+            standaloneHost=${{ secrets.NEO4J_HOST }}
+            standalonePort=${{ secrets.NEO4J_PORT }}
+            standaloneDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneUsername=${{ secrets.NEO4J_USERNAME }}
+            standalonePassword=${{ secrets.NEO4J_PASSWORD }}
+            standaloneDashboardName="${{ vars.DASHBOARD_NAME || 'My Dashboard' }}"
+            standaloneDashboardDatabase=${{ secrets.NEO4J_DATABASE }}
+            standaloneAllowLoad=true
+            standalonePasswordWarningHidden=true
+            customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
+
+      - name: Set replicas to 2
+        run: |
+          az containerapp update \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --min-replicas 2 \
+            --max-replicas 2
+
+      - name: Configure health probes
+        run: |
+          CONTAINER_NAME=$(az containerapp show \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].name" -o tsv)
+          cat > /tmp/probes.yaml <<EOF
+          properties:
+            template:
+              containers:
+                - name: ${CONTAINER_NAME}
+                  probes:
+                    - type: Liveness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 10
+                      periodSeconds: 30
+                      failureThreshold: 3
+                    - type: Readiness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      failureThreshold: 3
+          EOF
+          az containerapp update \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yaml /tmp/probes.yaml
+
+      - name: Get preview URL
+        id: preview-url
+        run: |
+          FQDN=$(az containerapp show \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "url=https://${FQDN}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment PR with preview URL
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Preview Deployment
+            Preview is ready at: ${{ steps.preview-url.outputs.url }}
+            Sign in with your **@ciandt.com** or **@asos.com** email.
+            _Updated for commit ${{ github.sha }}_
+
+  # ──────────────────────────────────────────────
+  # Cleanup: PR closed
+  # ──────────────────────────────────────────────
+  cleanup-preview:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Close Pull Request
     steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SEA_048057803 }}
-          action: "close"
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete preview Container App
+        run: |
+          az containerapp delete \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yes
+
+      - name: Delete preview image tags from ACR
+        run: |
+          for tag in $(az acr repository show-tags \
+            --name ${{ env.ACR_NAME }} \
+            --repository flowdash \
+            --query "[?starts_with(@, 'pr-${{ github.event.pull_request.number }}-')]" \
+            -o tsv 2>/dev/null); do
+            az acr repository untag \
+              --name ${{ env.ACR_NAME }} \
+              --image "flowdash:$tag" 2>/dev/null || true
+          done
+        continue-on-error: true

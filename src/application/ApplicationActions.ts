@@ -247,3 +247,33 @@ export const setDeprecationNotice = (deprecated: boolean) => ({
   type: SET_DEPRECATION_NOTICE,
   payload: { deprecated },
 });
+
+export const SET_AUTH_ENABLED = 'APPLICATION/SET_AUTH_ENABLED';
+export const setAuthEnabled = (enabled: boolean, allowedDomains: string[]) => ({
+  type: SET_AUTH_ENABLED,
+  payload: { enabled, allowedDomains },
+});
+
+export const SET_AUTH_USER_EMAIL = 'APPLICATION/SET_AUTH_USER_EMAIL';
+export const setAuthUserEmail = (email: string | null) => ({
+  type: SET_AUTH_USER_EMAIL,
+  payload: { email },
+});
+
+export const SET_AUTH_LOGIN_ERROR = 'APPLICATION/SET_AUTH_LOGIN_ERROR';
+export const setAuthLoginError = (error: string) => ({
+  type: SET_AUTH_LOGIN_ERROR,
+  payload: { error },
+});
+
+export const SET_AUTH_LOGIN_LOADING = 'APPLICATION/SET_AUTH_LOGIN_LOADING';
+export const setAuthLoginLoading = (loading: boolean) => ({
+  type: SET_AUTH_LOGIN_LOADING,
+  payload: { loading },
+});
+
+export const SET_PENDING_CONFIG = 'APPLICATION/SET_PENDING_CONFIG';
+export const setPendingConfig = (config: any, params: any, standalone: boolean) => ({
+  type: SET_PENDING_CONFIG,
+  payload: { config, params, standalone },
+});

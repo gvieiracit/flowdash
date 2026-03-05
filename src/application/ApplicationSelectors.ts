@@ -137,3 +137,23 @@ export const applicationGetCustomHeader = (state: any) => {
 export const applicationGetDevMode = (state: any) => {
   return state.application.devMode;
 };
+
+export const applicationGetAuthEnabled = (state: any) => {
+  return state.application.authEnabled;
+};
+
+export const applicationGetAuthAllowedDomains = (state: any) => {
+  return state.application.authAllowedDomains;
+};
+
+export const applicationGetAuthUserEmail = (state: any) => {
+  return state.application.authUserEmail;
+};
+
+export const applicationGetAuthLoginError = (state: any) => {
+  return state.application.authLoginError;
+};
+
+export const applicationGetAuthLoginLoading = (state: any) => {
+  return state.application.authLoginLoading;
+};

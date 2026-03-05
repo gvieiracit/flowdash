@@ -16,12 +16,19 @@ import {
   applicationHasReportHelpModalOpen,
   applicationIsStandalone,
   applicationIsDeprecated,
+  applicationGetAuthEnabled,
+  applicationGetAuthAllowedDomains,
+  applicationGetAuthUserEmail,
+  applicationGetAuthLoginError,
+  applicationGetAuthLoginLoading,
 } from '../application/ApplicationSelectors';
 import {
   createConnectionThunk,
   onConfirmLoadSharedDashboardThunk,
   loadApplicationConfigThunk,
+  attemptLoginThunk,
 } from '../application/ApplicationThunks';
+import LoginModal from './LoginModal';
 import {
   clearNotification,
   resetShareDetails,
@@ -75,7 +82,7 @@ const Application = ({
   standaloneSettings,
   aboutModalOpen,
   loadDashboard,
-  deprecated,
+  _deprecated,
   shareDetails,
   createConnection,
   setConnectionDetails,
@@ -94,6 +101,12 @@ const Application = ({
   onConnectionModalClose,
   onSSOAttempt,
   themeMode,
+  authEnabled,
+  authAllowedDomains,
+  authUserEmail,
+  authLoginError,
+  authLoginLoading,
+  onAuthLogin,
 }) => {
   const [initialized, setInitialized] = React.useState(false);
 
@@ -117,6 +130,18 @@ const Application = ({
       document.body.classList.remove('ndl-theme-dark');
     }
   }, [themeMode]);
+
+  // If auth is enabled and user is not logged in, show the login modal
+  if (authEnabled && !authUserEmail) {
+    return (
+      <LoginModal
+        authAllowedDomains={authAllowedDomains}
+        onLogin={onAuthLogin}
+        error={authLoginError}
+        loading={authLoginLoading}
+      />
+    );
+  }
 
   // Only render the dashboard component if we have an active Neo4j connection.
   return (
@@ -201,6 +226,11 @@ const mapStateToProps = (state) => ({
   welcomeScreenOpen: applicationHasWelcomeScreenOpen(state),
   hasCachedDashboard: applicationHasCachedDashboard(state),
   deprecated: applicationIsDeprecated(state),
+  authEnabled: applicationGetAuthEnabled(state),
+  authAllowedDomains: applicationGetAuthAllowedDomains(state),
+  authUserEmail: applicationGetAuthUserEmail(state),
+  authLoginError: applicationGetAuthLoginError(state),
+  authLoginLoading: applicationGetAuthLoginLoading(state),
   getDebugState: () => {
     return applicationGetDebugState(state);
   }, // TODO - change this to be variable instead of a function?
@@ -242,6 +272,7 @@ const mapDispatchToProps = (dispatch) => ({
   onAboutModalOpen: (_) => dispatch(setAboutModalOpen(true)),
   setWelcomeScreenOpen: (open) => dispatch(setWelcomeScreenOpen(open)),
   onAboutModalClose: (_) => dispatch(setAboutModalOpen(false)),
+  onAuthLogin: (email: string, password: string) => dispatch(attemptLoginThunk(email, password)),
   resetApplication: () => {
     dispatch(setWelcomeScreenOpen(true));
     dispatch(setConnected(false));

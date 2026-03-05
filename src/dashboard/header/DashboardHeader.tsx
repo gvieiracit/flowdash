@@ -3,7 +3,12 @@ import { connect } from 'react-redux';
 import { setDashboardTitle } from '../DashboardActions';
 import { getDashboardSettings, getDashboardTheme, getDashboardTitle, getPages } from '../DashboardSelectors';
 import { setConnectionModalOpen } from '../../application/ApplicationActions';
-import { applicationGetStandaloneSettings, applicationGetCustomHeader, applicationGetDevMode } from '../../application/ApplicationSelectors';
+import {
+  applicationGetStandaloneSettings,
+  applicationGetCustomHeader,
+  applicationGetDevMode,
+  applicationGetAuthUserEmail,
+} from '../../application/ApplicationSelectors';
 import { getDashboardIsEditable, getPageNumber } from '../../settings/SettingsSelectors';
 import { NeoDashboardHeaderLogo } from './DashboardHeaderLogo';
 import NeoAboutButton from './DashboardHeaderAboutButton';
@@ -27,6 +32,7 @@ export const NeoDashboardHeader = ({
   themeMode,
   setTheme,
   devMode,
+  authUserEmail,
 }) => {
   const downloadImageEnabled = settings ? settings.downloadImageEnabled : false;
   const [dashboardTitleText, setDashboardTitleText] = React.useState(dashboardTitle);
@@ -81,6 +87,11 @@ export const NeoDashboardHeader = ({
             )}
           </nav>
           <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0 n-gap-6'>
+            {authUserEmail && (
+              <span className='n-text-sm n-font-medium n-whitespace-nowrap' style={{ opacity: 0.8 }}>
+                Welcome Back, {authUserEmail.split('@')[0]}
+              </span>
+            )}
             <div className='n-flex n-flex-row n-gap-x-2'>
               <Tooltip title={'Change Theme'} disableInteractive>
                 <div>
@@ -113,6 +124,7 @@ const mapStateToProps = (state) => ({
   standaloneSettings: applicationGetStandaloneSettings(state),
   customHeader: applicationGetCustomHeader(state),
   devMode: applicationGetDevMode(state),
+  authUserEmail: applicationGetAuthUserEmail(state),
   pages: getPages(state),
   settings: getDashboardSettings(state),
   editable: getDashboardIsEditable(state),
