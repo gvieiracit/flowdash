@@ -63,6 +63,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Get ACR credentials
+        id: acr-creds
+        run: |
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "password=$ACR_PASSWORD" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to Container App
         uses: azure/container-apps-deploy-action@v2
         with:
@@ -72,7 +79,9 @@ jobs:
           containerAppEnvironment: ${{ env.ENVIRONMENT }}
           targetPort: 5005
           ingress: external
-          acrName: ${{ env.ACR_NAME }}
+          registryUrl: ${{ env.ACR_LOGIN_SERVER }}
+          registryUsername: ${{ env.ACR_NAME }}
+          registryPassword: ${{ steps.acr-creds.outputs.password }}
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
@@ -139,6 +148,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Get ACR credentials
+        id: acr-creds
+        run: |
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "password=$ACR_PASSWORD" >> "$GITHUB_OUTPUT"
+
       - name: Deploy preview Container App
         uses: azure/container-apps-deploy-action@v2
         with:
@@ -148,7 +164,9 @@ jobs:
           containerAppEnvironment: ${{ env.ENVIRONMENT }}
           targetPort: 5005
           ingress: external
-          acrName: ${{ env.ACR_NAME }}
+          registryUrl: ${{ env.ACR_LOGIN_SERVER }}
+          registryUsername: ${{ env.ACR_NAME }}
+          registryPassword: ${{ steps.acr-creds.outputs.password }}
           environmentVariables: >-
             authEnabled=true
             AUTH_PASSWORD=${{ secrets.AUTH_PASSWORD }}
