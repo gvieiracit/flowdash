@@ -24,6 +24,10 @@ env:
   ENVIRONMENT: cae-flowdash
   PROD_APP_NAME: ca-flowdash-prod
 
+concurrency:
+  group: deploy-${{ github.event.pull_request.number || 'production' }}
+  cancel-in-progress: true
+
 jobs:
   # ──────────────────────────────────────────────
   # Production: push to master
@@ -112,11 +116,16 @@ jobs:
             --name ${{ env.PROD_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.template.containers[0].name" -o tsv)
+          CONTAINER_IMAGE=$(az containerapp show \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].image" -o tsv)
           cat > /tmp/probes.yaml <<EOF
           properties:
             template:
               containers:
                 - name: ${CONTAINER_NAME}
+                  image: ${CONTAINER_IMAGE}
                   probes:
                     - type: Liveness
                       httpGet:
@@ -230,11 +239,16 @@ jobs:
             --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.template.containers[0].name" -o tsv)
+          CONTAINER_IMAGE=$(az containerapp show \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].image" -o tsv)
           cat > /tmp/probes.yaml <<EOF
           properties:
             template:
               containers:
                 - name: ${CONTAINER_NAME}
+                  image: ${CONTAINER_IMAGE}
                   probes:
                     - type: Liveness
                       httpGet:
