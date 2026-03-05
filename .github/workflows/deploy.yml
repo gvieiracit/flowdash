@@ -24,6 +24,10 @@ env:
   ENVIRONMENT: cae-flowdash
   PROD_APP_NAME: ca-flowdash-prod
 
+concurrency:
+  group: deploy-${{ github.event.pull_request.number || 'production' }}
+  cancel-in-progress: true
+
 jobs:
   # ──────────────────────────────────────────────
   # Production: push to master
@@ -108,34 +112,40 @@ jobs:
 
       - name: Configure health probes
         run: |
-          CONTAINER_NAME=$(az containerapp show \
-            --name ${{ env.PROD_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query "properties.template.containers[0].name" -o tsv)
-          cat > /tmp/probes.yaml <<EOF
-          properties:
-            template:
-              containers:
-                - name: ${CONTAINER_NAME}
-                  probes:
-                    - type: Liveness
-                      httpGet:
-                        path: /
-                        port: 5005
-                      initialDelaySeconds: 10
-                      periodSeconds: 30
-                      failureThreshold: 3
-                    - type: Readiness
-                      httpGet:
-                        path: /
-                        port: 5005
-                      initialDelaySeconds: 5
-                      periodSeconds: 10
-                      failureThreshold: 3
-          EOF
+          APP="${{ env.PROD_APP_NAME }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+
+          # Fetch full container spec (preserves env vars, resources, etc.)
+          CONTAINER_JSON=$(az containerapp show \
+            --name $APP --resource-group $RG \
+            --query "properties.template.containers[0]" -o json)
+
+          # Add probes to the existing container spec
+          UPDATED_JSON=$(echo "$CONTAINER_JSON" | jq '.probes = [
+            {
+              "type": "Liveness",
+              "httpGet": {"path": "/", "port": 5005},
+              "initialDelaySeconds": 10,
+              "periodSeconds": 30,
+              "failureThreshold": 3
+            },
+            {
+              "type": "Readiness",
+              "httpGet": {"path": "/", "port": 5005},
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "failureThreshold": 3
+            }
+          ]')
+
+          # Wrap in the required structure and convert to YAML
+          echo "$UPDATED_JSON" \
+            | jq '{properties: {template: {containers: [.]}}}' \
+            | yq -P > /tmp/probes.yaml
+
           az containerapp update \
-            --name ${{ env.PROD_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name $APP \
+            --resource-group $RG \
             --yaml /tmp/probes.yaml
 
   # ──────────────────────────────────────────────
@@ -226,34 +236,40 @@ jobs:
 
       - name: Configure health probes
         run: |
-          CONTAINER_NAME=$(az containerapp show \
-            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query "properties.template.containers[0].name" -o tsv)
-          cat > /tmp/probes.yaml <<EOF
-          properties:
-            template:
-              containers:
-                - name: ${CONTAINER_NAME}
-                  probes:
-                    - type: Liveness
-                      httpGet:
-                        path: /
-                        port: 5005
-                      initialDelaySeconds: 10
-                      periodSeconds: 30
-                      failureThreshold: 3
-                    - type: Readiness
-                      httpGet:
-                        path: /
-                        port: 5005
-                      initialDelaySeconds: 5
-                      periodSeconds: 10
-                      failureThreshold: 3
-          EOF
+          APP="ca-flowdash-pr-${{ github.event.pull_request.number }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+
+          # Fetch full container spec (preserves env vars, resources, etc.)
+          CONTAINER_JSON=$(az containerapp show \
+            --name $APP --resource-group $RG \
+            --query "properties.template.containers[0]" -o json)
+
+          # Add probes to the existing container spec
+          UPDATED_JSON=$(echo "$CONTAINER_JSON" | jq '.probes = [
+            {
+              "type": "Liveness",
+              "httpGet": {"path": "/", "port": 5005},
+              "initialDelaySeconds": 10,
+              "periodSeconds": 30,
+              "failureThreshold": 3
+            },
+            {
+              "type": "Readiness",
+              "httpGet": {"path": "/", "port": 5005},
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "failureThreshold": 3
+            }
+          ]')
+
+          # Wrap in the required structure and convert to YAML
+          echo "$UPDATED_JSON" \
+            | jq '{properties: {template: {containers: [.]}}}' \
+            | yq -P > /tmp/probes.yaml
+
           az containerapp update \
-            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name $APP \
+            --resource-group $RG \
             --yaml /tmp/probes.yaml
 
       - name: Get preview URL
