@@ -98,12 +98,45 @@ jobs:
             standalonePasswordWarningHidden=true
             customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
-      - name: Set min replicas to 1
+      - name: Set replicas to 2
         run: |
           az containerapp update \
             --name ${{ env.PROD_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --min-replicas 1
+            --min-replicas 2 \
+            --max-replicas 2
+
+      - name: Configure health probes
+        run: |
+          CONTAINER_NAME=$(az containerapp show \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].name" -o tsv)
+          cat > /tmp/probes.yaml <<EOF
+          properties:
+            template:
+              containers:
+                - name: ${CONTAINER_NAME}
+                  probes:
+                    - type: Liveness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 10
+                      periodSeconds: 30
+                      failureThreshold: 3
+                    - type: Readiness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      failureThreshold: 3
+          EOF
+          az containerapp update \
+            --name ${{ env.PROD_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yaml /tmp/probes.yaml
 
   # ──────────────────────────────────────────────
   # PR Preview: opened / updated
@@ -183,12 +216,45 @@ jobs:
             standalonePasswordWarningHidden=true
             customHeader=${{ secrets.NEO4J_CUSTOMHEADER }}
 
-      - name: Set min replicas to 1
+      - name: Set replicas to 2
         run: |
           az containerapp update \
             --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --min-replicas 1
+            --min-replicas 2 \
+            --max-replicas 2
+
+      - name: Configure health probes
+        run: |
+          CONTAINER_NAME=$(az containerapp show \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.template.containers[0].name" -o tsv)
+          cat > /tmp/probes.yaml <<EOF
+          properties:
+            template:
+              containers:
+                - name: ${CONTAINER_NAME}
+                  probes:
+                    - type: Liveness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 10
+                      periodSeconds: 30
+                      failureThreshold: 3
+                    - type: Readiness
+                      httpGet:
+                        path: /
+                        port: 5005
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      failureThreshold: 3
+          EOF
+          az containerapp update \
+            --name ca-flowdash-pr-${{ github.event.pull_request.number }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --yaml /tmp/probes.yaml
 
       - name: Get preview URL
         id: preview-url
