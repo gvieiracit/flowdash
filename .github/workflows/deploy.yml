@@ -20,7 +20,7 @@ on:
 env:
   ACR_NAME: acrflowdash
   ACR_LOGIN_SERVER: acrflowdash.azurecr.io
-  RESOURCE_GROUP: ASOS_AI
+  RESOURCE_GROUP: ASOS_AI2
   ENVIRONMENT: cae-flowdash
   PROD_APP_NAME: ca-flowdash-prod
 
